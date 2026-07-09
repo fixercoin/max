@@ -249,16 +249,6 @@ const DeployTokenPage: React.FC = () => {
               </div>
             )}
 
-            <div className="info-card">
-              <div className="info-text">
-                <strong>DEPLOYMENT INFO</strong><br />
-                FEE: 0.05 SOL -
-                TIME: 30 SECONDS -
-                INCLUDES METADATA -
-                VERIFIED BY MAX DEX
-              </div>
-            </div>
-
             {deployedTokens.length > 0 && (
               <div className="recent-card">
                 <div className="recent-header">RECENT DEPLOYMENTS</div>
@@ -392,6 +382,16 @@ const DeployTokenPage: React.FC = () => {
                 >
                   DEPLOY TOKEN ON MAX DEX
                 </button>
+              </div>
+
+              <div className="deployment-info-section">
+                <div className="info-text">
+                  <strong>DEPLOYMENT INFO</strong><br />
+                  FEE: 0.05 SOL -
+                  TIME: 30 SECONDS -
+                  INCLUDES METADATA -
+                  VERIFIED BY MAX DEX
+                </div>
               </div>
             </div>
 
@@ -883,6 +883,24 @@ const DeployTokenPage: React.FC = () => {
 
         .action-buttons-section .action-btn {
           margin-bottom: 0;
+        }
+
+        .deployment-info-section {
+          padding: 20px;
+          border-top: 1px solid #1e2a3a;
+          background: rgba(108, 155, 210, 0.05);
+        }
+
+        .deployment-info-section .info-text {
+          font-size: 11px;
+          color: #8e9bae;
+          line-height: 1.8;
+          margin: 0;
+        }
+
+        .deployment-info-section .info-text strong {
+          color: #6c9bd2;
+          font-size: 12px;
         }
 
         .upload-placeholder {
