@@ -14,6 +14,8 @@ const SwapRouterPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [tokenPrices, setTokenPrices] = useState<Record<string, any>>({});
   const [selectedChartToken, setSelectedChartToken] = useState<string>('So11111111111111111111111111111111111111112');
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Define base tokens - moved inside useMemo or defined as constant outside component
   const baseTokens = React.useMemo(() => [
@@ -59,23 +61,32 @@ const SwapRouterPage: React.FC = () => {
     }
   };
 
-  // Fetch prices for all tokens
-  useEffect(() => {
-    const fetchAllPrices = async () => {
-      const prices: Record<string, any> = {};
-      for (const token of allTokens) {
-        const priceData = await fetchTokenPrice(token.mint);
-        if (priceData) {
-          prices[token.mint] = priceData;
-        }
+  // Fetch prices for all tokens with polling for real-time updates
+  const fetchAllPrices = React.useCallback(async () => {
+    const prices: Record<string, any> = {};
+    for (const token of allTokens) {
+      const priceData = await fetchTokenPrice(token.mint);
+      if (priceData) {
+        prices[token.mint] = priceData;
       }
-      setTokenPrices(prices);
-    };
-    
+    }
+    setTokenPrices(prices);
+    setLastUpdated(new Date());
+    setIsRefreshing(false);
+  }, [allTokens]);
+
+  useEffect(() => {
     if (allTokens.length > 0) {
       fetchAllPrices();
+      const intervalId = setInterval(fetchAllPrices, 5000);
+      return () => clearInterval(intervalId);
     }
-  }, [allTokens]);
+  }, [allTokens, fetchAllPrices]);
+
+  const handleManualRefresh = () => {
+    setIsRefreshing(true);
+    fetchAllPrices();
+  };
 
   // Update token objects with real-time prices
   const tokensWithPrices = React.useMemo(() => {
@@ -300,8 +311,32 @@ const SwapRouterPage: React.FC = () => {
     <div className="swap-router-three-columns">
       {/* LEFT COLUMN - TOKENS LIST WITH SEARCH - 20% */}
       <div className="left-column">
-        <div className="column-header">TOKENS LIST</div>
-        
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+          <div className="column-header" style={{ margin: 0 }}>TOKENS LIST</div>
+          <button
+            onClick={handleManualRefresh}
+            disabled={isRefreshing}
+            style={{
+              padding: '6px 12px',
+              background: isRefreshing ? '#666' : '#6c9bd2',
+              border: 'none',
+              borderRadius: '4px',
+              color: 'white',
+              cursor: isRefreshing ? 'not-allowed' : 'pointer',
+              fontSize: '11px',
+              fontWeight: '700',
+              opacity: isRefreshing ? 0.6 : 1
+            }}
+            title="Refresh prices from DexScreener"
+          >
+            {isRefreshing ? '⏳ REFRESHING...' : '🔄 REFRESH'}
+          </button>
+        </div>
+
+        <div style={{ fontSize: '10px', color: '#888', marginBottom: '12px', textAlign: 'right' }}>
+          Last updated: {lastUpdated.toLocaleTimeString()}
+        </div>
+
         <div className="search-container">
           <input
             type="text"
