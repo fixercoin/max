@@ -17,6 +17,7 @@ const DeployTokenPage: React.FC = () => {
   const [selectedTokenStandard, setSelectedTokenStandard] = useState<string>('spl');
   const [selectedMintAuthority, setSelectedMintAuthority] = useState<string>('wallet');
   const [showSettings, setShowSettings] = useState(false);
+  const [tokenBanner, setTokenBanner] = useState<string | null>(null);
 
   const presets = {
     custom: { name: 'MAX TOKEN', symbol: 'MAX', supply: 100000000, decimals: 6 },
@@ -42,6 +43,17 @@ const DeployTokenPage: React.FC = () => {
       const reader = new FileReader();
       reader.onloadend = () => {
         setTokenLogo(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setTokenBanner(reader.result as string);
       };
       reader.readAsDataURL(file);
     }
@@ -247,23 +259,6 @@ const DeployTokenPage: React.FC = () => {
               </div>
             </div>
 
-            {!dexClient && (
-              <button className="action-btn init-btn" onClick={initializeDex}>
-                INITIALIZE DEX FIRST
-              </button>
-            )}
-
-            <button 
-              className="action-btn deploy-btn" 
-              onClick={handleDeployToken}
-              disabled={!dexClient && !status.includes('ALREADY INITIALIZED')}
-            >
-              DEPLOY TOKEN ON MAX DEX
-            </button>
-
-            <div className="warning-text">
-            </div>
-
             {deployedTokens.length > 0 && (
               <div className="recent-card">
                 <div className="recent-header">RECENT DEPLOYMENTS</div>
@@ -288,29 +283,50 @@ const DeployTokenPage: React.FC = () => {
 
           {/* RIGHT COLUMN - TOKEN CONFIGURATION */}
           <div className="right-column">
-            <div className="column-header">TOKEN CONFIGURATION</div>
-            
-            <div className="form-group">
-              <label className="form-label">TOKEN LOGO</label>
-              <div className="logo-container">
-                {tokenLogo ? (
-                  <div className="logo-preview">
-                    <img src={tokenLogo} alt="TOKEN LOGO" className="logo-img" />
-                    <button className="remove-logo" onClick={() => setTokenLogo(null)}>REMOVE</button>
-                  </div>
-                ) : (
-                  <div className="logo-upload">
-                    <label className="upload-label">
-                      <input type="file" accept="image/*" onChange={handleImageUpload} className="logo-input" />
-                      <div className="upload-placeholder">CLICK TO UPLOAD LOGO</div>
-                    </label>
-                  </div>
-                )}
-              </div>
-            </div>
 
             <div className="info-section">
               <div className="info-section-header">TOKEN DETAILS</div>
+
+              <div className="media-upload-section">
+                <div className="form-group">
+                  <label className="form-label">TOKEN LOGO</label>
+                  <div className="logo-container">
+                    {tokenLogo ? (
+                      <div className="logo-preview">
+                        <img src={tokenLogo} alt="TOKEN LOGO" className="logo-img" />
+                        <button className="remove-logo" onClick={() => setTokenLogo(null)}>REMOVE</button>
+                      </div>
+                    ) : (
+                      <div className="logo-upload">
+                        <label className="upload-label">
+                          <input type="file" accept="image/*" onChange={handleImageUpload} className="logo-input" />
+                          <div className="upload-placeholder">CLICK TO UPLOAD LOGO</div>
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">TOKEN BANNER</label>
+                  <div className="banner-container">
+                    {tokenBanner ? (
+                      <div className="banner-preview">
+                        <img src={tokenBanner} alt="TOKEN BANNER" className="banner-img" />
+                        <button className="remove-banner" onClick={() => setTokenBanner(null)}>REMOVE</button>
+                      </div>
+                    ) : (
+                      <div className="banner-upload">
+                        <label className="upload-label">
+                          <input type="file" accept="image/*" onChange={handleBannerUpload} className="banner-input" />
+                          <div className="upload-placeholder">CLICK TO UPLOAD BANNER</div>
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <div className="token-details-grid">
                 <div className="form-group">
                   <label className="form-label">TOKEN NAME</label>
@@ -361,6 +377,21 @@ const DeployTokenPage: React.FC = () => {
                   <button onClick={() => handleQuickFill('medium')} className="supply-btn">1M</button>
                   <button onClick={() => handleQuickFill('large')} className="supply-btn">1B</button>
                 </div>
+              </div>
+
+              <div className="action-buttons-section">
+                {!dexClient && (
+                  <button className="action-btn init-btn" onClick={initializeDex}>
+                    INITIALIZE DEX FIRST
+                  </button>
+                )}
+                <button
+                  className="action-btn deploy-btn"
+                  onClick={handleDeployToken}
+                  disabled={!dexClient && !status.includes('ALREADY INITIALIZED')}
+                >
+                  DEPLOY TOKEN ON MAX DEX
+                </button>
               </div>
             </div>
 
@@ -773,8 +804,85 @@ const DeployTokenPage: React.FC = () => {
           display: block;
         }
 
-        .logo-input {
+        .logo-input,
+        .banner-input {
           display: none;
+        }
+
+        .media-upload-section {
+          padding: 20px;
+          border-bottom: 1px solid #1e2a3a;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 20px;
+        }
+
+        .media-upload-section .form-group {
+          margin-bottom: 0;
+        }
+
+        .banner-container {
+          margin-top: 5px;
+        }
+
+        .banner-preview {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 12px;
+          padding: 20px;
+          background: #0a0e15;
+          border: 1px solid #232a36;
+          border-radius: 12px;
+        }
+
+        .banner-img {
+          width: 100%;
+          height: 120px;
+          object-fit: cover;
+          border-radius: 8px;
+          border: 2px solid #6c9bd2;
+        }
+
+        .remove-banner {
+          padding: 6px 12px;
+          background: rgba(220, 38, 38, 0.2);
+          border: 1px solid #dc2626;
+          border-radius: 6px;
+          color: #dc2626;
+          font-size: 11px;
+          font-weight: 700;
+          cursor: pointer;
+          letter-spacing: 1px;
+        }
+
+        .remove-banner:hover {
+          background: rgba(220, 38, 38, 0.4);
+        }
+
+        .banner-upload {
+          padding: 30px;
+          background: #0a0e15;
+          border: 2px dashed #232a36;
+          border-radius: 12px;
+          text-align: center;
+          transition: all 0.2s;
+        }
+
+        .banner-upload:hover {
+          border-color: #6c9bd2;
+        }
+
+        .action-buttons-section {
+          padding: 20px;
+          border-top: 1px solid #1e2a3a;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+
+        .action-buttons-section .action-btn {
+          margin-bottom: 0;
         }
 
         .upload-placeholder {
@@ -879,6 +987,11 @@ const DeployTokenPage: React.FC = () => {
           }
 
           .token-details-grid {
+            grid-template-columns: 1fr;
+            gap: 16px;
+          }
+
+          .media-upload-section {
             grid-template-columns: 1fr;
             gap: 16px;
           }
