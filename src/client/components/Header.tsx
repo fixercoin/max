@@ -96,8 +96,13 @@ const Header: React.FC = () => {
         throw new Error(`${walletDisplayName} provider not found`);
       }
 
-      // Connect to wallet
-      const result = await provider.connect();
+      // Connect with timeout
+      const result = await Promise.race([
+        provider.connect(),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Connection timeout - wallet did not respond')), 30000)
+        )
+      ]);
 
       let publicKey = '';
       if (result.publicKey) {
@@ -132,7 +137,7 @@ const Header: React.FC = () => {
       if (error.message?.includes('rejected') || error.code === 4001) {
         setWalletStatus('Connection rejected by user');
       } else if (error.message?.includes('timeout')) {
-        setWalletStatus('Connection timeout - please approve in wallet');
+        setWalletStatus('Connection timeout - please check wallet and try again');
       } else {
         setWalletStatus(error.message || 'Connection failed');
       }
