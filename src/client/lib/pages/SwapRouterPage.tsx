@@ -122,26 +122,40 @@ const SwapRouterPage: React.FC = () => {
     }
 
     const isAtoB = selectedPool.tokenA === fromToken.mint;
-    const reserveIn = isAtoB ? selectedPool.reserveA : selectedPool.reserveB;
-    const reserveOut = isAtoB ? selectedPool.reserveB : selectedPool.reserveA;
-    
+    let reserveIn = isAtoB ? selectedPool.reserveA : selectedPool.reserveB;
+    let reserveOut = isAtoB ? selectedPool.reserveB : selectedPool.reserveA;
+
+    // Convert BN to number if needed
+    if (reserveIn?.toNumber) reserveIn = reserveIn.toNumber();
+    if (reserveOut?.toNumber) reserveOut = reserveOut.toNumber();
+
+    // Check for valid reserves
+    if (!reserveIn || !reserveOut || reserveIn === 0 || reserveOut === 0) {
+      setEstimatedOutput('POOL HAS NO LIQUIDITY');
+      return;
+    }
+
     const rawAmountIn = amount * Math.pow(10, fromToken.decimals);
-    
-    const feeBps = selectedPool.fee;
+
+    const feeBps = selectedPool.fee || 0;
     const feeMultiplier = (10000 - feeBps) / 10000;
     const amountInWithFee = rawAmountIn * feeMultiplier;
-    
+
     const rawAmountOut = (amountInWithFee * reserveOut) / (reserveIn + amountInWithFee);
+
+    if (isNaN(rawAmountOut) || rawAmountOut <= 0) {
+      setEstimatedOutput('INVALID SWAP CALCULATION');
+      return;
+    }
+
     const amountOut = rawAmountOut / Math.pow(10, toToken.decimals);
-    
+
     setEstimatedOutput(
       `ESTIMATED OUTPUT: ${amountOut.toFixed(6)} ${toToken.symbol}\n` +
       `FEE: ${feeBps / 100}%\n` +
       `LIQUIDITY: ${(reserveIn / Math.pow(10, fromToken.decimals)).toFixed(2)} ${fromToken.symbol} / ` +
       `${(reserveOut / Math.pow(10, toToken.decimals)).toFixed(2)} ${toToken.symbol}`
     );
-    
-    return amountOut;
   };
 
   // Execute swap
@@ -171,10 +185,14 @@ const SwapRouterPage: React.FC = () => {
       const userPubkey = new PublicKey(wallet.publicKey);
 
       const isAtoB = selectedPool.tokenA === fromToken.mint;
-      const reserveIn = isAtoB ? selectedPool.reserveA : selectedPool.reserveB;
-      const reserveOut = isAtoB ? selectedPool.reserveB : selectedPool.reserveA;
+      let reserveIn = isAtoB ? selectedPool.reserveA : selectedPool.reserveB;
+      let reserveOut = isAtoB ? selectedPool.reserveB : selectedPool.reserveA;
 
-      if (!reserveIn || !reserveOut) {
+      // Convert BN to number if needed
+      if (reserveIn?.toNumber) reserveIn = reserveIn.toNumber();
+      if (reserveOut?.toNumber) reserveOut = reserveOut.toNumber();
+
+      if (!reserveIn || !reserveOut || reserveIn === 0 || reserveOut === 0) {
         setSwapStatus('ERROR: POOL HAS INSUFFICIENT LIQUIDITY');
         return;
       }
