@@ -175,37 +175,62 @@ const SwapRouterPage: React.FC = () => {
   // Execute swap
   const handleExecuteSwap = async () => {
     if (!wallet || !dexClient) {
-      alert('CONNECT WALLET AND INITIALIZE DEX FIRST');
+      setSwapStatus('ERROR: CONNECT WALLET AND INITIALIZE DEX FIRST');
       return;
     }
 
     if (!fromToken || !toToken || !selectedPool) {
-      alert('SELECT TOKENS AND ENSURE POOL EXISTS');
+      setSwapStatus('ERROR: SELECT TOKENS AND ENSURE POOL EXISTS');
       return;
     }
 
     const amount = parseFloat(swapAmount);
     if (isNaN(amount) || amount <= 0) {
-      alert('ENTER VALID AMOUNT');
+      setSwapStatus('ERROR: ENTER VALID AMOUNT');
       return;
     }
 
-    setSwapStatus('PREPARING SWAP...');
+    setSwapStatus('VALIDATING SWAP...');
 
     try {
+      const poolPubkey = new PublicKey(selectedPool.poolAddress);
+      const tokenInPubkey = new PublicKey(fromToken.mint);
+      const tokenOutPubkey = new PublicKey(toToken.mint);
+      const userPubkey = new PublicKey(wallet.publicKey);
+
       const isAtoB = selectedPool.tokenA === fromToken.mint;
       const reserveIn = isAtoB ? selectedPool.reserveA : selectedPool.reserveB;
       const reserveOut = isAtoB ? selectedPool.reserveB : selectedPool.reserveA;
+
+      if (!reserveIn || !reserveOut) {
+        setSwapStatus('ERROR: POOL HAS INSUFFICIENT LIQUIDITY');
+        return;
+      }
 
       const rawAmountIn = amount * Math.pow(10, fromToken.decimals);
       const feeMultiplier = (10000 - selectedPool.fee) / 10000;
       const amountInWithFee = rawAmountIn * feeMultiplier;
       const rawAmountOut = (amountInWithFee * reserveOut) / (reserveIn + amountInWithFee);
-      const minAmountOut = rawAmountOut * 0.99;
+      const minAmountOut = rawAmountOut * 0.95;
 
-      const poolPubkey = new PublicKey(selectedPool.poolAddress);
-      const tokenInPubkey = new PublicKey(fromToken.mint);
-      const tokenOutPubkey = new PublicKey(toToken.mint);
+      if (minAmountOut <= 0) {
+        setSwapStatus('ERROR: OUTPUT AMOUNT WOULD BE ZERO. REDUCE SLIPPAGE.');
+        return;
+      }
+
+      setSwapStatus('CHECKING BALANCES AND ACCOUNTS...');
+
+      const tokenBalance = await dexClient.getTokenBalance(tokenInPubkey, userPubkey);
+      if (tokenBalance < rawAmountIn) {
+        const readable = (tokenBalance / Math.pow(10, fromToken.decimals)).toFixed(6);
+        const needed = (rawAmountIn / Math.pow(10, fromToken.decimals)).toFixed(6);
+        setSwapStatus(`ERROR: INSUFFICIENT ${fromToken.symbol} BALANCE\nHave: ${readable}, Need: ${needed}`);
+        return;
+      }
+
+      setSwapStatus('PREPARING ASSOCIATED TOKEN ACCOUNTS...');
+      await dexClient.ensureAssociatedTokenAccount(tokenInPubkey, userPubkey);
+      await dexClient.ensureAssociatedTokenAccount(tokenOutPubkey, userPubkey);
 
       setSwapStatus('REQUESTING TRANSACTION SIGNATURE...');
 
@@ -243,7 +268,7 @@ const SwapRouterPage: React.FC = () => {
       });
 
       setSwapStatus(
-        `SWAP EXECUTED SUCCESSFULLY!\n` +
+        `✓ SWAP EXECUTED SUCCESSFULLY!\n` +
         `SENT: ${amount} ${fromToken.symbol}\n` +
         `RECEIVED: ${outputAmount} ${toToken.symbol}\n` +
         `FEE: ${selectedPool.fee / 100}%\n\n` +
@@ -254,7 +279,9 @@ const SwapRouterPage: React.FC = () => {
       setEstimatedOutput('');
 
     } catch (e: any) {
-      setSwapStatus(`SWAP FAILED: ${e.message}`);
+      const errorMsg = e.message || 'Unknown error';
+      const cleanError = errorMsg.replace(/Error: /g, '').substring(0, 100);
+      setSwapStatus(`ERROR: ${cleanError}`);
       console.error('Swap error:', e);
     }
   };
