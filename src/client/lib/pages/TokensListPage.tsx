@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from 'react';
-import React, { useState, useMemo } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { useDexScreenerPrice } from '../hooks/useDexScreenerPrice';
 
