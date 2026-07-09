@@ -632,4 +632,45 @@ export class MaxDexClient {
       return { valid: false, error: e.message || 'Failed to validate liquidity addition' };
     }
   }
+
+  async claimPoolFees(
+    pool: PublicKey,
+    tokenIndex: number,
+    feeReceiver: PublicKey
+  ): Promise<string> {
+    const poolAccount = await this.program.account.poolAccount.fetch(pool) as any;
+
+    try {
+      const feeTokenAccount = await this.ensureAssociatedTokenAccount(
+        tokenIndex === 0 ? poolAccount.tokenA : poolAccount.tokenB,
+        feeReceiver
+      );
+
+      const poolAuthority = this.getPoolAuthorityAddress(pool);
+
+      const tx = await this.executeRpcWithTimeout(
+        this.program.methods
+          .claimPoolFees(tokenIndex)
+          .accounts({
+            poolCreator: this.provider.wallet.publicKey,
+            pool: pool,
+            poolTokenAVault: poolAccount.tokenAVault,
+            poolTokenBVault: poolAccount.tokenBVault,
+            feeTokenAccount: feeTokenAccount,
+            poolAuthority: poolAuthority,
+            tokenProgram: TOKEN_PROGRAM_ID,
+          } as any)
+          .rpc()
+      );
+
+      await this.confirmTx(tx);
+      this.lastTx = tx;
+      return tx;
+    } catch (e: any) {
+      if (e.message?.includes('insufficient funds')) {
+        throw new Error('Insufficient SOL for transaction fees');
+      }
+      throw e;
+    }
+  }
 }

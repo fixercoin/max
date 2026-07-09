@@ -107,6 +107,7 @@ pub mod max {
         pool.creation_timestamp = Clock::get()?.unix_timestamp;
         pool.lp_mint = ctx.accounts.lp_mint.key();
         pool.lp_supply = 0;
+        pool.creator = ctx.accounts.authority.key();
         pool.bump = ctx.bumps.pool;
         pool.authority_bump = ctx.bumps.pool_authority;
 
@@ -390,6 +391,45 @@ pub mod max {
         msg!("Token verified");
         Ok(())
     }
+
+    pub fn claim_pool_fees(
+        ctx: Context<ClaimPoolFees>,
+        token_index: u8,
+    ) -> Result<()> {
+        require!(ctx.accounts.pool_creator.key() == ctx.accounts.pool.creator, DexError::Unauthorized);
+
+        let pool = &mut ctx.accounts.pool;
+        require!(pool.total_fees_collected > 0, DexError::InvalidAmount);
+
+        let fee_amount = pool.total_fees_collected as u64;
+        let (from_vault, token_account) = if token_index == 0 {
+            require!(ctx.accounts.pool_token_a_vault.mint.key() == ctx.accounts.fee_token_account.mint.key(), DexError::InvalidTokenPair);
+            (ctx.accounts.pool_token_a_vault.to_account_info(), ctx.accounts.fee_token_account.to_account_info())
+        } else {
+            require!(ctx.accounts.pool_token_b_vault.mint.key() == ctx.accounts.fee_token_account.mint.key(), DexError::InvalidTokenPair);
+            (ctx.accounts.pool_token_b_vault.to_account_info(), ctx.accounts.fee_token_account.to_account_info())
+        };
+
+        let pool_key = ctx.accounts.pool.key();
+        let pool_authority_seeds = &[b"pool_authority", pool_key.as_ref(), &[pool.authority_bump]];
+
+        token::transfer(
+            CpiContext::new_with_signer(
+                ctx.accounts.token_program.to_account_info(),
+                Transfer {
+                    from: from_vault,
+                    to: token_account,
+                    authority: ctx.accounts.pool_authority.to_account_info(),
+                },
+                &[pool_authority_seeds],
+            ),
+            fee_amount,
+        )?;
+
+        pool.total_fees_collected = 0;
+        msg!("Pool fees claimed: {}", fee_amount);
+        Ok(())
+    }
 }
 
 fn integer_sqrt(n: u128) -> u128 {
@@ -588,6 +628,27 @@ pub struct Swap<'info> {
 }
 
 #[derive(Accounts)]
+pub struct ClaimPoolFees<'info> {
+    #[account(mut)]
+    pub pool_creator: Signer<'info>,
+    #[account(mut)]
+    pub pool: Account<'info, PoolAccount>,
+    #[account(mut)]
+    pub pool_token_a_vault: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub pool_token_b_vault: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub fee_token_account: Account<'info, TokenAccount>,
+    /// CHECK: Pool authority PDA
+    #[account(
+        seeds = [b"pool_authority", pool.key().as_ref()],
+        bump = pool.authority_bump
+    )]
+    pub pool_authority: UncheckedAccount<'info>,
+    pub token_program: Program<'info, Token>,
+}
+
+#[derive(Accounts)]
 pub struct VerifyToken<'info> {
     pub authority: Signer<'info>,
     #[account(mut)]
@@ -638,6 +699,7 @@ pub struct PoolAccount {
     pub total_fees_collected: u128,
     pub lp_mint: Pubkey,
     pub lp_supply: u64,
+    pub creator: Pubkey,
     pub bump: u8,
     pub authority_bump: u8,
 }
