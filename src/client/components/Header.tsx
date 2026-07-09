@@ -21,15 +21,6 @@ const Header: React.FC = () => {
   const [isConnecting, setIsConnecting] = useState(false);
   const [selectedWallet, setSelectedWallet] = useState<string>('phantom');
 
-  // Check if any Solana wallet is installed
-  const getAvailableWallets = (): string[] => {
-    const wallets: string[] = [];
-    if (window.solana && window.solana.isPhantom) wallets.push('phantom');
-    if (window.solana && window.solana.isSolflare) wallets.push('solflare');
-    if (window.solana && !window.solana.isPhantom && !window.solana.isSolflare) wallets.push('standard');
-    if (window.fixorium) wallets.push('fixorium');
-    return wallets;
-  };
 
   // Get wallet provider by name
   const getProvider = (walletName?: string): any => {
@@ -77,7 +68,7 @@ const Header: React.FC = () => {
 
     // Check after a short delay for provider to be injected
     setTimeout(checkWalletConnection, 500);
-  }, [setWallet]);
+  }, [setWallet, selectedWallet]);
 
   const handleConnectWallet = async () => {
     if (!isWalletInstalled()) {
