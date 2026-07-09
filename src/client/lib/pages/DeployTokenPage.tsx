@@ -327,6 +327,53 @@ const DeployTokenPage: React.FC = () => {
             </div>
 
             <div className="info-section">
+              <div className="info-section-header">TOKEN DETAILS</div>
+              <div className="token-details-grid">
+                <div className="form-group">
+                  <label className="form-label">TOKEN NAME</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={tokenName}
+                    onChange={(e) => setTokenName(e.target.value.toUpperCase())}
+                    placeholder="Enter token name"
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">SYMBOL</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={tokenSymbol}
+                    onChange={(e) => setTokenSymbol(e.target.value.toUpperCase())}
+                    placeholder="Enter symbol"
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">DECIMALS</label>
+                  <input
+                    type="number"
+                    className="form-input"
+                    value={tokenDecimals}
+                    onChange={(e) => setTokenDecimals(parseInt(e.target.value))}
+                    min="0"
+                    max="9"
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">TOTAL SUPPLY</label>
+                  <input
+                    type="number"
+                    className="form-input"
+                    value={tokenSupply}
+                    onChange={(e) => setTokenSupply(parseInt(e.target.value))}
+                    min="1"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="info-section">
               <div className="info-section-header">TOKEN INFORMATION</div>
               <div className="info-row">
                 <span className="info-label">TOKEN NAME</span>
@@ -355,53 +402,6 @@ const DeployTokenPage: React.FC = () => {
               <div className="info-row">
                 <span className="info-label">ESTIMATED COST</span>
                 <span className="info-value">0.05 SOL</span>
-              </div>
-            </div>
-
-            <div className="info-section">
-              <div className="info-section-header">TOKEN DETAILS</div>
-              <div className="token-details-grid">
-                <div className="form-group">
-                  <label className="form-label">TOKEN NAME</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={tokenName}
-                    onChange={(e) => setTokenName(e.target.value.toUpperCase())}
-                    placeholder="MAX TOKEN"
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">SYMBOL</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={tokenSymbol}
-                    onChange={(e) => setTokenSymbol(e.target.value.toUpperCase())}
-                    placeholder="MAX"
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">DECIMALS</label>
-                  <input
-                    type="number"
-                    className="form-input"
-                    value={tokenDecimals}
-                    onChange={(e) => setTokenDecimals(parseInt(e.target.value))}
-                    min="0"
-                    max="9"
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">TOTAL SUPPLY</label>
-                  <input
-                    type="number"
-                    className="form-input"
-                    value={tokenSupply}
-                    onChange={(e) => setTokenSupply(parseInt(e.target.value))}
-                    min="1"
-                  />
-                </div>
               </div>
             </div>
           </div>
