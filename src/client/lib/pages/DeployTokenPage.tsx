@@ -450,17 +450,17 @@ const DeployTokenPage: React.FC = () => {
           gap: 0;
         }
 
-        .left-column,
+        .left-column {
+          display: none;
+        }
+
         .right-column {
           flex: 1;
           padding: 30px;
           background: rgba(12, 17, 26, 0.8);
           overflow-y: auto;
           min-height: 100vh;
-        }
-
-        .left-column {
-          border-right: 1px solid #232a36;
+          width: 100%;
         }
 
         .details-header {

@@ -20,6 +20,7 @@ const Header: React.FC = () => {
   const [walletStatus, setWalletStatus] = useState<string>('');
   const [isConnecting, setIsConnecting] = useState(false);
   const [selectedWallet, setSelectedWallet] = useState<string>('phantom');
+  const [showWalletDialog, setShowWalletDialog] = useState(false);
 
 
   // Get wallet provider by name
@@ -70,18 +71,25 @@ const Header: React.FC = () => {
     setTimeout(checkWalletConnection, 500);
   }, [setWallet, selectedWallet]);
 
-  const handleConnectWallet = async () => {
+  const handleWalletSelect = (walletName: string) => {
+    setSelectedWallet(walletName);
+    setShowWalletDialog(false);
+    handleConnectWallet(walletName);
+  };
+
+  const handleConnectWallet = async (walletName?: string) => {
     if (!isWalletInstalled()) {
       setWalletStatus('No Solana wallet detected! Install Phantom or Solflare.');
       return;
     }
 
     setIsConnecting(true);
-    const walletDisplayName = selectedWallet.charAt(0).toUpperCase() + selectedWallet.slice(1);
+    const name = walletName || selectedWallet;
+    const walletDisplayName = name.charAt(0).toUpperCase() + name.slice(1);
     setWalletStatus(`Connecting to ${walletDisplayName}...`);
 
     try {
-      const provider = getProvider(selectedWallet);
+      const provider = getProvider(name);
 
       if (!provider) {
         throw new Error(`${walletDisplayName} provider not found`);
@@ -136,6 +144,12 @@ const Header: React.FC = () => {
       setIsConnecting(false);
     }
   };
+
+  const walletOptions = [
+    { name: 'phantom', label: 'Phantom' },
+    { name: 'solflare', label: 'Solflare' },
+    { name: 'standard', label: 'Standard Wallet' }
+  ];
 
   const handleDisconnectWallet = () => {
     setWallet(null);
@@ -205,23 +219,43 @@ const Header: React.FC = () => {
           </>
         ) : (
           <>
-            <select
-              className="wallet-select"
-              value={selectedWallet}
-              onChange={(e) => setSelectedWallet(e.target.value)}
-              disabled={isConnecting}
-            >
-              <option value="phantom">Phantom</option>
-              <option value="solflare">Solflare</option>
-              <option value="standard">Standard Wallet</option>
-            </select>
             <button
               className="connect-wallet"
-              onClick={handleConnectWallet}
+              onClick={() => setShowWalletDialog(true)}
               disabled={isConnecting}
             >
               {isConnecting ? 'CONNECTING...' : 'CONNECT WALLET'}
             </button>
+
+            {showWalletDialog && (
+              <>
+                <div className="wallet-dialog-overlay" onClick={() => setShowWalletDialog(false)}></div>
+                <div className="wallet-dialog">
+                  <div className="wallet-dialog-header">
+                    <h3>Select Wallet</h3>
+                    <button
+                      className="wallet-dialog-close"
+                      onClick={() => setShowWalletDialog(false)}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <div className="wallet-dialog-content">
+                    {walletOptions.map((option) => (
+                      <button
+                        key={option.name}
+                        className="wallet-option"
+                        onClick={() => handleWalletSelect(option.name)}
+                        disabled={isConnecting}
+                      >
+                        <span className="wallet-option-label">{option.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
             {walletStatus && (
               <div className={`wallet-status ${walletStatus.includes('failed') || walletStatus.includes('rejected') ? 'wallet-error' : ''}`}>
                 {walletStatus}

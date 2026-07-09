@@ -112,16 +112,6 @@ const MyTokensPage: React.FC = () => {
       {/* Token Filters Bar */}
       <div className="filters-bar-container">
         <div className="filters-bar">
-          <div className="filters-title">⚙️ Token Filters</div>
-
-          {/* Stats Line */}
-          <div className="stats-line">
-            <span className="stat-number">{totalTokens}</span>
-            <span className="stat-number verified">{verifiedTokens}</span>
-            <span className="stat-number unverified">{totalTokens - verifiedTokens}</span>
-            <span className="stat-number">{totalSupply.toLocaleString()}</span>
-          </div>
-
           {/* Dropdowns Line */}
           <div className="dropdowns-line">
             <select

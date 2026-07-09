@@ -134,7 +134,7 @@ const TokenDetailsPage: React.FC = () => {
       case 'basic':
         return tokenData && (
           <div className="info-card">
-            <h3 className="card-title">📋 Basic Information</h3>
+            <h3 className="card-title">Information</h3>
             <div className="card-content">
               <div className="info-row">
                 <span className="info-label">Symbol</span>
@@ -162,11 +162,11 @@ const TokenDetailsPage: React.FC = () => {
       case 'dex':
         return programMetadata && (
           <div className="info-card">
-            <h3 className="card-title">✓ MAX DEX Verification</h3>
+            <h3 className="card-title">MAX DEX Verification</h3>
             <div className="card-content">
               <div className="info-row">
                 <span className="info-label">Status</span>
-                <span className="info-value verified">✅ Verified</span>
+                <span className="info-value verified">Verified</span>
               </div>
               <div className="info-row">
                 <span className="info-label">Total Supply</span>
@@ -186,7 +186,7 @@ const TokenDetailsPage: React.FC = () => {
       case 'stats':
         return (
           <div className="info-card">
-            <h3 className="card-title">📊 Statistics</h3>
+            <h3 className="card-title">Statistics</h3>
             <div className="card-content">
               <div className="info-row">
                 <span className="info-label">24h Volume</span>
@@ -217,197 +217,304 @@ const TokenDetailsPage: React.FC = () => {
   };
 
   return (
-    <div className="two-column-layout">
-      {/* Left Column - Dropdowns */}
-      <div className="left-column">
-        <div className="dropdowns-container">
-          <h3 className="column-title">⚙️ Token Information</h3>
-          
-          {/* Dropdown 1 */}
-          <div className="dropdown-group">
-            <label className="dropdown-label">Information Type</label>
-            <select 
-              className="dropdown-select"
-              value={selectedInfoType}
-              onChange={(e) => setSelectedInfoType(e.target.value)}
-            >
-              <option value="basic">📋 Basic Information</option>
-              <option value="dex">✓ MAX DEX Verification</option>
-              <option value="stats">📊 Statistics</option>
-            </select>
-          </div>
-
-          {/* Dropdown 2 */}
-          <div className="dropdown-group">
-            <label className="dropdown-label">Liquidity Pool Filter</label>
-            <select 
-              className="dropdown-select"
-              value={selectedPool}
-              onChange={(e) => setSelectedPool(e.target.value)}
-            >
-              <option value="all">All Pools ({poolsWithToken.length})</option>
-              {poolsWithToken.map((pool, idx) => (
-                <option key={idx} value={pool.id || idx}>
-                  {pool.symbolA}/{pool.symbolB} - {pool.fee/100}% fee
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Dropdown 3 */}
-          <div className="dropdown-group">
-            <label className="dropdown-label">Timeframe</label>
-            <select 
-              className="dropdown-select"
-              value={selectedTimeframe}
-              onChange={(e) => setSelectedTimeframe(e.target.value)}
-            >
-              <option value="24h">Last 24 Hours</option>
-              <option value="7d">Last 7 Days</option>
-              <option value="30d">Last 30 Days</option>
-              <option value="all">All Time</option>
-            </select>
-          </div>
-
-          {/* Dropdown 4 */}
-          <div className="dropdown-group">
-            <label className="dropdown-label">Sort Holders By</label>
-            <select 
-              className="dropdown-select"
-              value={selectedHolderSort}
-              onChange={(e) => setSelectedHolderSort(e.target.value)}
-            >
-              <option value="amount">Highest Balance</option>
-              <option value="address">Address (A-Z)</option>
-            </select>
+    <div className="token-details-full-layout">
+      {/* Header Section with Token Info */}
+      <div className="token-header-banner">
+        <div className="token-header-content">
+          <div className="token-header-info">
+            {tokenData?.logo && (
+              <img src={tokenData.logo} alt={tokenData.symbol} className="token-header-logo" />
+            )}
+            <div className="token-header-text">
+              <h2 className="token-header-symbol">{tokenData?.symbol}</h2>
+              <span className="token-header-name">{tokenData?.name}</span>
+              <span className="token-network-badge">{tokenData?.network?.toUpperCase()}</span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Right Column - Cards */}
-      <div className="right-column">
-        <div className="cards-container">
-          <h3 className="column-title">📦 Token Data</h3>
-          
-          {/* Card 1: Dynamic Info Card based on dropdown */}
-          {getInfoContent()}
+      {/* Birdeye Chart Section */}
+      <div className="birdeye-section">
+        <h3 className="section-chart-title">Token Chart (Powered by Birdeye)</h3>
+        <div className="birdeye-chart-wrapper">
+          <iframe
+            src={`https://birdeye.so/token/${selectedTokenForDetails}?chain=solana`}
+            frameBorder="0"
+            allow="clipboard-write"
+            className="birdeye-iframe"
+            title="Birdeye Token Chart"
+          ></iframe>
+        </div>
+      </div>
 
-          {/* Card 2: Price Chart */}
-          <div className="info-card">
-            <h3 className="card-title">📈 Price Chart ({selectedTimeframe})</h3>
-            <div className="card-content">
-              <div className="chart-container">
-                <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="chart-svg">
-                  <polyline
-                    points={chartData.map((d, i) => `${(i / chartData.length) * 100},${50 - ((d.price - Math.min(...chartData.map(c => c.price))) / (Math.max(...chartData.map(c => c.price)) - Math.min(...chartData.map(c => c.price)) || 1)) * 50}`).join(' ')}
-                    fill="none"
-                    stroke="#6C9BD2"
-                    strokeWidth="0.5"
-                  />
-                </svg>
+      {/* Two Column Section - Info and Trade History */}
+      <div className="two-column-layout">
+        {/* Left Column - Dropdowns */}
+        <div className="left-column">
+          <div className="dropdowns-container">
+            <h3 className="column-title">Token Information</h3>
+            
+            {/* Dropdown 1 */}
+            <div className="dropdown-group">
+              <label className="dropdown-label">Information Type</label>
+              <select 
+                className="dropdown-select"
+                value={selectedInfoType}
+                onChange={(e) => setSelectedInfoType(e.target.value)}
+              >
+                <option value="basic">Basic Information</option>
+                <option value="dex">MAX DEX Verification</option>
+                <option value="stats">Statistics</option>
+              </select>
+            </div>
+
+            {/* Dropdown 2 */}
+            <div className="dropdown-group">
+              <label className="dropdown-label">Liquidity Pool Filter</label>
+              <select 
+                className="dropdown-select"
+                value={selectedPool}
+                onChange={(e) => setSelectedPool(e.target.value)}
+              >
+                <option value="all">All Pools ({poolsWithToken.length})</option>
+                {poolsWithToken.map((pool, idx) => (
+                  <option key={idx} value={pool.id || idx}>
+                    {pool.symbolA}/{pool.symbolB} - {pool.fee/100}% fee
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Dropdown 3 */}
+            <div className="dropdown-group">
+              <label className="dropdown-label">Timeframe</label>
+              <select 
+                className="dropdown-select"
+                value={selectedTimeframe}
+                onChange={(e) => setSelectedTimeframe(e.target.value)}
+              >
+                <option value="24h">Last 24 Hours</option>
+                <option value="7d">Last 7 Days</option>
+                <option value="30d">Last 30 Days</option>
+                <option value="all">All Time</option>
+              </select>
+            </div>
+
+            {/* Dropdown 4 */}
+            <div className="dropdown-group">
+              <label className="dropdown-label">Sort Holders By</label>
+              <select 
+                className="dropdown-select"
+                value={selectedHolderSort}
+                onChange={(e) => setSelectedHolderSort(e.target.value)}
+              >
+                <option value="amount">Highest Balance</option>
+                <option value="address">Address (A-Z)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column - Cards */}
+        <div className="right-column">
+          <div className="cards-container">
+            <h3 className="column-title">Token Data</h3>
+            
+            {/* Card 1: Dynamic Info Card based on dropdown */}
+            {getInfoContent()}
+
+            {/* Card 2: Trade Execution History */}
+            <div className="info-card">
+              <h3 className="card-title">Trade Execution History</h3>
+              <div className="card-content">
+                {transactions.length > 0 ? (
+                  <div className="transactions-list">
+                    {transactions.slice(0, 10).map((tx, idx) => (
+                      <div key={idx} className="transaction-item">
+                        <div className="tx-header">
+                          <span className="tx-signature">{tx.signature.slice(0, 16)}...{tx.signature.slice(-8)}</span>
+                          <span className="tx-status" data-status={tx.status}>{tx.status.toUpperCase()}</span>
+                        </div>
+                        <div className="tx-time">{new Date(tx.timestamp * 1000).toLocaleString()}</div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="empty-state">No transactions yet</p>
+                )}
               </div>
-              <div className="chart-stats">
-                <span>Low: ${Math.min(...chartData.map(d => d.price)).toFixed(4)}</span>
-                <span>High: ${Math.max(...chartData.map(d => d.price)).toFixed(4)}</span>
+            </div>
+
+            {/* Card 3: Liquidity Pools */}
+            <div className="info-card">
+              <h3 className="card-title">Liquidity Pools ({filteredPools.length})</h3>
+              <div className="card-content">
+                {filteredPools.length > 0 ? (
+                  <div className="pools-list">
+                    {filteredPools.map((pool, idx) => (
+                      <div key={idx} className="pool-item">
+                        <div className="pool-name">{pool.symbolA}/{pool.symbolB}</div>
+                        <div className="pool-details">
+                          <span>Fee: {pool.fee / 100}%</span>
+                          <span>TVL: ${((pool.reserveA + pool.reserveB) / 1e6).toFixed(2)}</span>
+                          <span>Reserve A: {(pool.reserveA / 1e6).toFixed(2)}</span>
+                          <span>Reserve B: {(pool.reserveB / 1e6).toFixed(2)}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="empty-state">No liquidity pools found</p>
+                )}
               </div>
             </div>
-          </div>
 
-          {/* Card 3: Liquidity Pools */}
-          <div className="info-card">
-            <h3 className="card-title">💧 Liquidity Pools ({filteredPools.length})</h3>
-            <div className="card-content">
-              {filteredPools.length > 0 ? (
-                <div className="pools-list">
-                  {filteredPools.map((pool, idx) => (
-                    <div key={idx} className="pool-item">
-                      <div className="pool-name">{pool.symbolA}/{pool.symbolB}</div>
-                      <div className="pool-details">
-                        <span>💰 Fee: {pool.fee / 100}%</span>
-                        <span>💵 TVL: ${((pool.reserveA + pool.reserveB) / 1e6).toFixed(2)}</span>
-                        <span>📊 Reserve A: {(pool.reserveA / 1e6).toFixed(2)}</span>
-                        <span>📊 Reserve B: {(pool.reserveB / 1e6).toFixed(2)}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="empty-state">No liquidity pools found</p>
-              )}
-            </div>
-          </div>
-
-          {/* Card 4: Recent Transactions */}
-          <div className="info-card">
-            <h3 className="card-title">🔄 Recent Transactions</h3>
-            <div className="card-content">
-              {transactions.length > 0 ? (
-                <div className="transactions-list">
-                  {transactions.slice(0, 5).map((tx, idx) => (
-                    <div key={idx} className="transaction-item">
-                      <div className="tx-header">
-                        <span className="tx-type">{tx.type.replace('-', ' ').toUpperCase()}</span>
-                        <span className="tx-time">{new Date(tx.timestamp).toLocaleDateString()}</span>
-                      </div>
-                      <div className="tx-details">
-                        {tx.fromToken && <span>From: {tx.fromToken}</span>}
-                        {tx.toToken && <span>To: {tx.toToken}</span>}
-                        {tx.amount && <span>Amount: {tx.amount}</span>}
-                      </div>
-                      {tx.explorerUrl && (
-                        <a href={tx.explorerUrl} target="_blank" rel="noopener noreferrer" className="tx-link">
-                          View on Explorer ↗
-                        </a>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="empty-state">No transactions yet</p>
-              )}
-            </div>
-          </div>
-
-          {/* Card 5: Top Holders */}
-          <div className="info-card">
-            <h3 className="card-title">👥 Top Holders</h3>
-            <div className="card-content">
-              {sortedHolders.length > 0 ? (
-                <div className="holders-list">
-                  {sortedHolders.slice(0, 10).map((h, i) => {
-                    const parsed = h.account.data?.parsed?.info;
-                    const amount = parsed?.tokenAmount?.uiAmount || 0;
-                    const percentage = tokenData?.totalSupply 
-                      ? (amount / (tokenData.totalSupply / Math.pow(10, tokenData.decimals))) * 100 
-                      : 0;
-                    return (
-                      <div key={i} className="holder-item">
-                        <div className="holder-rank">#{i + 1}</div>
-                        <div className="holder-address mono">{h.pubkey.slice(0, 8)}...{h.pubkey.slice(-6)}</div>
-                        <div className="holder-amount">{amount.toLocaleString()} {tokenData?.symbol}</div>
-                        <div className="holder-percentage">({percentage.toFixed(2)}%)</div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <p className="empty-state">No holders found</p>
-              )}
+            {/* Card 4: Top Holders */}
+            <div className="info-card">
+              <h3 className="card-title">Top Holders</h3>
+              <div className="card-content">
+                {sortedHolders.length > 0 ? (
+                  <div className="holders-list">
+                    {sortedHolders.slice(0, 10).map((h, i) => {
+                      const parsed = h.account.data?.parsed?.info;
+                      const amount = parsed?.tokenAmount?.uiAmount || 0;
+                      const percentage = tokenData?.totalSupply 
+                        ? (amount / (tokenData.totalSupply / Math.pow(10, tokenData.decimals))) * 100 
+                        : 0;
+                      return (
+                        <div key={i} className="holder-item">
+                          <div className="holder-rank">#{i + 1}</div>
+                          <div className="holder-address mono">{h.pubkey.slice(0, 8)}...{h.pubkey.slice(-6)}</div>
+                          <div className="holder-amount">{amount.toLocaleString()} {tokenData?.symbol}</div>
+                          <div className="holder-percentage">({percentage.toFixed(2)}%)</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="empty-state">No holders found</p>
+                )}
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       <style>{`
+        .token-details-full-layout {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+          width: 100%;
+          height: 100%;
+          padding: 20px;
+          background: linear-gradient(135deg, #0f1419 0%, #151d28 100%);
+          border-radius: 16px;
+          overflow-y: auto;
+        }
+
+        .token-header-banner {
+          background: linear-gradient(135deg, #6c9bd2 0%, #4a7aab 100%);
+          border-radius: 12px;
+          padding: 20px;
+          display: flex;
+          align-items: center;
+          gap: 20px;
+        }
+
+        .token-header-content {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          width: 100%;
+        }
+
+        .token-header-info {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+        }
+
+        .token-header-logo {
+          width: 64px;
+          height: 64px;
+          border-radius: 50%;
+          border: 3px solid white;
+          object-fit: cover;
+        }
+
+        .token-header-text {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .token-header-symbol {
+          font-size: 32px;
+          font-weight: 700;
+          color: white;
+          margin: 0;
+          text-transform: uppercase;
+          letter-spacing: 2px;
+        }
+
+        .token-header-name {
+          font-size: 14px;
+          color: rgba(255, 255, 255, 0.9);
+        }
+
+        .token-network-badge {
+          display: inline-block;
+          padding: 4px 10px;
+          background: rgba(255, 255, 255, 0.2);
+          border-radius: 4px;
+          font-size: 11px;
+          font-weight: 600;
+          color: white;
+          width: fit-content;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+        }
+
+        .birdeye-section {
+          background: rgba(12, 17, 26, 0.8);
+          border: 1px solid #232a36;
+          border-radius: 12px;
+          padding: 20px;
+          backdrop-filter: blur(10px);
+        }
+
+        .section-chart-title {
+          font-size: 16px;
+          font-weight: 600;
+          color: #6c9bd2;
+          margin: 0 0 16px 0;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+        }
+
+        .birdeye-chart-wrapper {
+          width: 100%;
+          height: 450px;
+          border-radius: 8px;
+          overflow: hidden;
+          background: #0c111a;
+          border: 1px solid #1e2a3a;
+        }
+
+        .birdeye-iframe {
+          width: 100%;
+          height: 100%;
+          border: none;
+        }
+
         .two-column-layout {
           display: flex;
           gap: 20px;
           width: 100%;
-          height: 100%;
+          height: auto;
           min-height: 600px;
-          padding: 20px;
-          background: linear-gradient(135deg, #0f1419 0%, #151d28 100%);
-          border-radius: 16px;
         }
 
         /* Left Column Styles */
@@ -557,25 +664,66 @@ const TokenDetailsPage: React.FC = () => {
           word-break: break-all;
         }
 
-        /* Chart Styles */
-        .chart-container {
-          width: 100%;
-          height: 120px;
-          margin-bottom: 12px;
+        /* Transactions List Styles */
+        .transactions-list {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
         }
 
-        .chart-svg {
-          width: 100%;
-          height: 100%;
+        .transaction-item {
+          padding: 12px;
+          background: #0a0e15;
+          border-radius: 8px;
+          transition: all 0.2s;
+          border-left: 3px solid #6c9bd2;
         }
 
-        .chart-stats {
+        .transaction-item:hover {
+          background: #0f1419;
+        }
+
+        .tx-header {
           display: flex;
           justify-content: space-between;
+          align-items: center;
+          margin-bottom: 8px;
+          gap: 8px;
+        }
+
+        .tx-signature {
           font-size: 11px;
+          font-weight: 600;
+          color: #6c9bd2;
+          font-family: 'Courier New', monospace;
+          flex: 1;
+          word-break: break-all;
+        }
+
+        .tx-status {
+          font-size: 10px;
+          font-weight: 700;
+          text-transform: uppercase;
+          padding: 2px 6px;
+          border-radius: 4px;
+          white-space: nowrap;
+        }
+
+        .tx-status[data-status="success"] {
+          background: rgba(111, 207, 151, 0.2);
+          color: #6fcf97;
+          border: 1px solid #6fcf97;
+        }
+
+        .tx-status[data-status="failed"] {
+          background: rgba(220, 38, 38, 0.2);
+          color: #dc2626;
+          border: 1px solid #dc2626;
+        }
+
+        .tx-time {
+          font-size: 10px;
           color: #8e9bae;
-          padding-top: 8px;
-          border-top: 1px solid #1e2a3a;
         }
 
         /* Pools List Styles */
@@ -605,64 +753,6 @@ const TokenDetailsPage: React.FC = () => {
           gap: 12px;
           font-size: 11px;
           color: #8e9bae;
-        }
-
-        /* Transactions List Styles */
-        .transactions-list {
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-        }
-
-        .transaction-item {
-          padding: 12px;
-          background: #0a0e15;
-          border-radius: 8px;
-          transition: all 0.2s;
-        }
-
-        .transaction-item:hover {
-          background: #0f1419;
-        }
-
-        .tx-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 8px;
-        }
-
-        .tx-type {
-          font-size: 11px;
-          font-weight: 700;
-          color: #6c9bd2;
-          text-transform: uppercase;
-        }
-
-        .tx-time {
-          font-size: 10px;
-          color: #8e9bae;
-        }
-
-        .tx-details {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 12px;
-          font-size: 11px;
-          color: #e6edf5;
-          margin-bottom: 8px;
-        }
-
-        .tx-link {
-          display: inline-block;
-          font-size: 10px;
-          color: #6c9bd2;
-          text-decoration: none;
-          font-weight: 600;
-        }
-
-        .tx-link:hover {
-          text-decoration: underline;
         }
 
         /* Holders List Styles */
@@ -751,8 +841,34 @@ const TokenDetailsPage: React.FC = () => {
         }
 
         @media (max-width: 768px) {
-          .two-column-layout {
+          .token-details-full-layout {
             padding: 12px;
+            gap: 12px;
+          }
+
+          .token-header-banner {
+            flex-direction: column;
+            text-align: center;
+          }
+
+          .token-header-info {
+            flex-direction: column;
+          }
+
+          .token-header-symbol {
+            font-size: 24px;
+          }
+
+          .birdeye-section {
+            padding: 12px;
+          }
+
+          .birdeye-chart-wrapper {
+            height: 300px;
+          }
+
+          .two-column-layout {
+            padding: 0;
             gap: 12px;
           }
 
