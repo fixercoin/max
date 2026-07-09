@@ -181,14 +181,6 @@ const DeployTokenPage: React.FC = () => {
               </button>
             </div>
 
-            <div className="status-card">
-              <div className="status-header">
-                <span className="status-title">CONNECTION STATUS</span>
-              </div>
-              <div className="status-content">
-                <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', margin: 0 }}>{status}</pre>
-              </div>
-            </div>
 
             {showSettings && (
               <div className="settings-panel">
@@ -244,15 +236,6 @@ const DeployTokenPage: React.FC = () => {
                 </div>
               </div>
             )}
-
-            <div className="form-group">
-              <label className="form-label">QUICK SUPPLY OPTIONS</label>
-              <div className="supply-buttons">
-                <button onClick={() => handleQuickFill('small')} className="supply-btn">10K</button>
-                <button onClick={() => handleQuickFill('medium')} className="supply-btn">1M</button>
-                <button onClick={() => handleQuickFill('large')} className="supply-btn">1B</button>
-              </div>
-            </div>
 
             <div className="info-card">
               <div className="info-text">
@@ -369,6 +352,14 @@ const DeployTokenPage: React.FC = () => {
                     onChange={(e) => setTokenSupply(parseInt(e.target.value))}
                     min="1"
                   />
+                </div>
+              </div>
+              <div className="supply-options-section">
+                <label className="form-label">QUICK SUPPLY OPTIONS</label>
+                <div className="supply-buttons">
+                  <button onClick={() => handleQuickFill('small')} className="supply-btn">10K</button>
+                  <button onClick={() => handleQuickFill('medium')} className="supply-btn">1M</button>
+                  <button onClick={() => handleQuickFill('large')} className="supply-btn">1B</button>
                 </div>
               </div>
             </div>
@@ -571,6 +562,11 @@ const DeployTokenPage: React.FC = () => {
           outline: none;
           border-color: #6c9bd2;
           box-shadow: 0 0 0 2px rgba(108, 155, 210, 0.1);
+        }
+
+        .supply-options-section {
+          padding: 20px;
+          border-top: 1px solid #1e2a3a;
         }
 
         .supply-buttons {
