@@ -5,6 +5,7 @@ declare global {
   interface Window {
     fixorium?: any;
     solana?: any;
+    phantom?: any;
   }
 }
 
@@ -18,33 +19,55 @@ const Header: React.FC = () => {
   const { wallet, setWallet, currentPage, setCurrentPage } = useAppContext();
   const [walletStatus, setWalletStatus] = useState<string>('');
   const [isConnecting, setIsConnecting] = useState(false);
+  const [selectedWallet, setSelectedWallet] = useState<string>('phantom');
 
-  // Check if Fixorium wallet is installed
-  const isFixoriumInstalled = (): boolean => {
-    return !!window.fixorium || !!window.solana;
+  // Check if any Solana wallet is installed
+  const getAvailableWallets = (): string[] => {
+    const wallets: string[] = [];
+    if (window.solana && window.solana.isPhantom) wallets.push('phantom');
+    if (window.solana && window.solana.isSolflare) wallets.push('solflare');
+    if (window.solana && !window.solana.isPhantom && !window.solana.isSolflare) wallets.push('standard');
+    if (window.fixorium) wallets.push('fixorium');
+    return wallets;
   };
 
-  // Get Fixorium provider
-  const getProvider = () => {
-    return window.fixorium || window.solana;
+  // Get wallet provider by name
+  const getProvider = (walletName?: string): any => {
+    const name = walletName || selectedWallet;
+    if (name === 'phantom' || name === 'standard') return window.solana;
+    if (name === 'solflare') return window.solana;
+    if (name === 'fixorium') return window.fixorium || window.solana;
+    return window.solana;
+  };
+
+  const isWalletInstalled = (): boolean => {
+    return !!window.solana || !!window.fixorium;
   };
 
   // Check if wallet is already connected on page load
   useEffect(() => {
     const checkWalletConnection = async () => {
       const provider = getProvider();
-      if (provider && provider.isConnected) {
+      if (provider && (provider.isConnected || provider.publicKey)) {
         try {
-          // Try to get connected wallet info
-          const accounts = await provider.getAccounts?.();
-          if (accounts && accounts.length > 0) {
+          let publicKey = '';
+          if (provider.publicKey) {
+            publicKey = typeof provider.publicKey === 'string'
+              ? provider.publicKey
+              : provider.publicKey.toString();
+          } else if (provider.getAccounts) {
+            const accounts = await provider.getAccounts();
+            publicKey = accounts?.[0] || '';
+          }
+
+          if (publicKey) {
             const walletInfo: WalletInfo = {
-              publicKey: accounts[0],
+              publicKey: publicKey,
               provider: provider,
               isConnected: true
             };
             setWallet(walletInfo);
-            setWalletStatus(`${accounts[0].slice(0, 28)}...`);
+            setWalletStatus(`${publicKey.slice(0, 28)}...`);
           }
         } catch (error) {
           console.log('Not connected or error checking connection');
@@ -52,52 +75,41 @@ const Header: React.FC = () => {
       }
     };
 
-    // Listen for Fixorium wallet events
-    const handleFixoriumInitialized = () => {
-      console.log('Fixorium Wallet detected');
-      checkWalletConnection();
-    };
-
-    window.addEventListener('fixorium#initialized', handleFixoriumInitialized);
-    
     // Check after a short delay for provider to be injected
     setTimeout(checkWalletConnection, 500);
-    
-    return () => {
-      window.removeEventListener('fixorium#initialized', handleFixoriumInitialized);
-    };
   }, [setWallet]);
 
   const handleConnectWallet = async () => {
-    if (!isFixoriumInstalled()) {
-      setWalletStatus('Fixorium Wallet extension not installed!');
-      // Open Chrome Web Store to install Fixorium Wallet
-      window.open('https://chrome.google.com/webstore/detail/fixorium-wallet', '_blank');
+    if (!isWalletInstalled()) {
+      setWalletStatus('No Solana wallet detected! Install Phantom or Solflare.');
       return;
     }
 
     setIsConnecting(true);
-    setWalletStatus('Connecting to Fixorium Wallet...');
+    const walletDisplayName = selectedWallet.charAt(0).toUpperCase() + selectedWallet.slice(1);
+    setWalletStatus(`Connecting to ${walletDisplayName}...`);
 
     try {
-      const provider = getProvider();
-      
+      const provider = getProvider(selectedWallet);
+
       if (!provider) {
-        throw new Error('Fixorium Wallet provider not found');
+        throw new Error(`${walletDisplayName} provider not found`);
       }
 
-      // Connect to Fixorium Wallet
+      // Connect to wallet
       const result = await provider.connect();
-      
+
       let publicKey = '';
       if (result.publicKey) {
-        publicKey = typeof result.publicKey === 'object' 
+        publicKey = typeof result.publicKey === 'object'
           ? result.publicKey.toBase58?.() || result.publicKey.toString()
           : result.publicKey;
       } else if (result.address) {
         publicKey = result.address;
-      } else if (result.toString) {
-        publicKey = result.toString();
+      } else if (provider.publicKey) {
+        publicKey = typeof provider.publicKey === 'object'
+          ? provider.publicKey.toBase58?.() || provider.publicKey.toString()
+          : provider.publicKey;
       }
 
       if (!publicKey) {
@@ -112,12 +124,12 @@ const Header: React.FC = () => {
 
       setWallet(walletInfo);
       setWalletStatus(`${publicKey.slice(0, 28)}...`);
-      
-      console.log('Connected to Fixorium Wallet:', publicKey);
+
+      console.log(`Connected to ${walletDisplayName}:`, publicKey);
     } catch (error: any) {
       console.error('Connection error:', error);
-      
-      if (error.message?.includes('rejected')) {
+
+      if (error.message?.includes('rejected') || error.code === 4001) {
         setWalletStatus('Connection rejected by user');
       } else if (error.message?.includes('timeout')) {
         setWalletStatus('Connection timeout - please approve in wallet');
@@ -192,26 +204,36 @@ const Header: React.FC = () => {
               </button>
             </div>
             <div className="wallet-status wallet-connected">
-              ✓ Connected to Fixorium
+              ✓ Wallet Connected
             </div>
           </>
         ) : (
           <>
+            <select
+              className="wallet-select"
+              value={selectedWallet}
+              onChange={(e) => setSelectedWallet(e.target.value)}
+              disabled={isConnecting}
+            >
+              <option value="phantom">Phantom</option>
+              <option value="solflare">Solflare</option>
+              <option value="standard">Standard Wallet</option>
+            </select>
             <button
               className="connect-wallet"
               onClick={handleConnectWallet}
               disabled={isConnecting}
             >
-              {isConnecting ? 'CONNECTING...' : 'CONNECT FIXORIUM WALLET'}
+              {isConnecting ? 'CONNECTING...' : 'CONNECT WALLET'}
             </button>
             {walletStatus && (
               <div className={`wallet-status ${walletStatus.includes('failed') || walletStatus.includes('rejected') ? 'wallet-error' : ''}`}>
                 {walletStatus}
               </div>
             )}
-            {!isFixoriumInstalled() && !walletStatus && (
+            {!isWalletInstalled() && !walletStatus && (
               <div className="wallet-status wallet-warning">
-                Fixorium Wallet extension not detected
+                No Solana wallet detected. Install Phantom or Solflare.
               </div>
             )}
           </>

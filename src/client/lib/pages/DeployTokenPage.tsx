@@ -10,10 +10,10 @@ const DeployTokenPage: React.FC = () => {
   const [tokenDecimals, setTokenDecimals] = useState(6);
   const [tokenSupply, setTokenSupply] = useState(100000000);
   const [tokenLogo, setTokenLogo] = useState<string | null>(null);
-  const [status, setStatus] = useState('READY SOLANA DEVNET');
-  
+  const [status, setStatus] = useState('READY SOLANA MAINNET');
+
   const [selectedPreset, setSelectedPreset] = useState<string>('custom');
-  const [selectedNetwork, setSelectedNetwork] = useState<string>('devnet');
+  const [selectedNetwork, setSelectedNetwork] = useState<string>('mainnet-beta');
   const [selectedTokenStandard, setSelectedTokenStandard] = useState<string>('spl');
   const [selectedMintAuthority, setSelectedMintAuthority] = useState<string>('wallet');
 
