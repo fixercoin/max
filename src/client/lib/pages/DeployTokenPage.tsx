@@ -16,6 +16,7 @@ const DeployTokenPage: React.FC = () => {
   const [selectedNetwork, setSelectedNetwork] = useState<string>('mainnet-beta');
   const [selectedTokenStandard, setSelectedTokenStandard] = useState<string>('spl');
   const [selectedMintAuthority, setSelectedMintAuthority] = useState<string>('wallet');
+  const [showSettings, setShowSettings] = useState(false);
 
   const presets = {
     custom: { name: 'MAX TOKEN', symbol: 'MAX', supply: 100000000, decimals: 6 },
@@ -165,8 +166,21 @@ const DeployTokenPage: React.FC = () => {
           
           {/* LEFT COLUMN - DEPLOYMENT SETTINGS */}
           <div className="left-column">
-            <div className="column-header">DEPLOYMENT SETTINGS</div>
-            
+            <div className="settings-header">
+              <div className="column-header">DEPLOYMENT SETTINGS</div>
+              <button
+                className="settings-toggle-btn"
+                onClick={() => setShowSettings(!showSettings)}
+                title="Toggle settings"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="3"></circle>
+                  <path d="M12 1v6m0 6v6m4.22-15.22l-4.24 4.24m-4.24 4.24l-4.24 4.24m14.9 2.9l-4.24-4.24m-4.24-4.24l-4.24-4.24"></path>
+                  <circle cx="12" cy="12" r="9"></circle>
+                </svg>
+              </button>
+            </div>
+
             <div className="status-card">
               <div className="status-header">
                 <span className="status-title">CONNECTION STATUS</span>
@@ -176,84 +190,60 @@ const DeployTokenPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="form-group">
-              <label className="form-label">
-                <svg className="settings-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="3"></circle>
-                  <path d="M12 1v6m0 6v6m4.22-15.22l-4.24 4.24m-4.24 4.24l-4.24 4.24m14.9 2.9l-4.24-4.24m-4.24-4.24l-4.24-4.24"></path>
-                  <circle cx="12" cy="12" r="9"></circle>
-                </svg>
-                TOKEN PRESET
-              </label>
-              <select
-                className="form-select"
-                value={selectedPreset}
-                onChange={(e) => handlePresetChange(e.target.value)}
-              >
-                <option value="custom">CUSTOM TOKEN</option>
-                <option value="meme">MEME TOKEN</option>
-                <option value="utility">UTILITY TOKEN</option>
-                <option value="governance">GOVERNANCE TOKEN</option>
-              </select>
-            </div>
+            {showSettings && (
+              <div className="settings-panel">
+                <div className="form-group">
+                  <label className="form-label">TOKEN PRESET</label>
+                  <select
+                    className="form-select"
+                    value={selectedPreset}
+                    onChange={(e) => handlePresetChange(e.target.value)}
+                  >
+                    <option value="custom">CUSTOM TOKEN</option>
+                    <option value="meme">MEME TOKEN</option>
+                    <option value="utility">UTILITY TOKEN</option>
+                    <option value="governance">GOVERNANCE TOKEN</option>
+                  </select>
+                </div>
 
-            <div className="form-group">
-              <label className="form-label">
-                <svg className="settings-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="3"></circle>
-                  <path d="M12 1v6m0 6v6m4.22-15.22l-4.24 4.24m-4.24 4.24l-4.24 4.24m14.9 2.9l-4.24-4.24m-4.24-4.24l-4.24-4.24"></path>
-                  <circle cx="12" cy="12" r="9"></circle>
-                </svg>
-                NETWORK
-              </label>
-              <select
-                className="form-select"
-                value={selectedNetwork}
-                onChange={(e) => setSelectedNetwork(e.target.value)}
-              >
-                <option value="devnet">DEVNET TEST</option>
-                <option value="mainnet-beta">MAINNET PRODUCTION</option>
-              </select>
-            </div>
+                <div className="form-group">
+                  <label className="form-label">NETWORK</label>
+                  <select
+                    className="form-select"
+                    value={selectedNetwork}
+                    onChange={(e) => setSelectedNetwork(e.target.value)}
+                  >
+                    <option value="devnet">DEVNET TEST</option>
+                    <option value="mainnet-beta">MAINNET PRODUCTION</option>
+                  </select>
+                </div>
 
-            <div className="form-group">
-              <label className="form-label">
-                <svg className="settings-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="3"></circle>
-                  <path d="M12 1v6m0 6v6m4.22-15.22l-4.24 4.24m-4.24 4.24l-4.24 4.24m14.9 2.9l-4.24-4.24m-4.24-4.24l-4.24-4.24"></path>
-                  <circle cx="12" cy="12" r="9"></circle>
-                </svg>
-                TOKEN STANDARD
-              </label>
-              <select
-                className="form-select"
-                value={selectedTokenStandard}
-                onChange={(e) => setSelectedTokenStandard(e.target.value)}
-              >
-                <option value="spl">SPL TOKEN</option>
-                <option value="spl2022">SPL TOKEN 2022</option>
-              </select>
-            </div>
+                <div className="form-group">
+                  <label className="form-label">TOKEN STANDARD</label>
+                  <select
+                    className="form-select"
+                    value={selectedTokenStandard}
+                    onChange={(e) => setSelectedTokenStandard(e.target.value)}
+                  >
+                    <option value="spl">SPL TOKEN</option>
+                    <option value="spl2022">SPL TOKEN 2022</option>
+                  </select>
+                </div>
 
-            <div className="form-group">
-              <label className="form-label">
-                <svg className="settings-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="3"></circle>
-                  <path d="M12 1v6m0 6v6m4.22-15.22l-4.24 4.24m-4.24 4.24l-4.24 4.24m14.9 2.9l-4.24-4.24m-4.24-4.24l-4.24-4.24"></path>
-                  <circle cx="12" cy="12" r="9"></circle>
-                </svg>
-                MINT AUTHORITY
-              </label>
-              <select
-                className="form-select"
-                value={selectedMintAuthority}
-                onChange={(e) => setSelectedMintAuthority(e.target.value)}
-              >
-                <option value="wallet">CURRENT WALLET</option>
-                <option value="multisig">MULTI-SIG COMING SOON</option>
-                <option value="timelock">TIME-LOCK COMING SOON</option>
-              </select>
-            </div>
+                <div className="form-group">
+                  <label className="form-label">MINT AUTHORITY</label>
+                  <select
+                    className="form-select"
+                    value={selectedMintAuthority}
+                    onChange={(e) => setSelectedMintAuthority(e.target.value)}
+                  >
+                    <option value="wallet">CURRENT WALLET</option>
+                    <option value="multisig">MULTI-SIG COMING SOON</option>
+                    <option value="timelock">TIME-LOCK COMING SOON</option>
+                  </select>
+                </div>
+              </div>
+            )}
 
             <div className="form-group">
               <label className="form-label">QUICK SUPPLY OPTIONS</label>
@@ -454,14 +444,74 @@ const DeployTokenPage: React.FC = () => {
           border-right: 1px solid #232a36;
         }
 
+        .settings-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 24px;
+        }
+
         .column-header {
           font-size: 20px;
           font-weight: 700;
           color: #6c9bd2;
-          margin-bottom: 24px;
           padding-bottom: 12px;
           border-bottom: 2px solid #6c9bd2;
           letter-spacing: 1px;
+          flex: 1;
+        }
+
+        .settings-toggle-btn {
+          width: 40px;
+          height: 40px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(108, 155, 210, 0.1);
+          border: 1px solid #6c9bd2;
+          border-radius: 8px;
+          color: #6c9bd2;
+          cursor: pointer;
+          transition: all 0.2s;
+          margin-left: 12px;
+        }
+
+        .settings-toggle-btn:hover {
+          background: rgba(108, 155, 210, 0.2);
+          transform: rotate(90deg);
+        }
+
+        .settings-toggle-btn svg {
+          width: 18px;
+          height: 18px;
+        }
+
+        .settings-panel {
+          background: rgba(108, 155, 210, 0.05);
+          border: 1px solid #232a36;
+          border-radius: 12px;
+          padding: 20px;
+          margin-bottom: 20px;
+          animation: slideDown 0.2s ease-out;
+        }
+
+        @keyframes slideDown {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .settings-panel .form-group {
+          margin-bottom: 18px;
+        }
+
+        .settings-panel .form-group:last-child {
+          margin-bottom: 0;
         }
 
         .status-card {
@@ -496,21 +546,12 @@ const DeployTokenPage: React.FC = () => {
         }
 
         .form-label {
-          display: flex;
-          align-items: center;
-          gap: 8px;
+          display: block;
           font-size: 11px;
           font-weight: 700;
           color: #8e9bae;
           margin-bottom: 8px;
           letter-spacing: 1px;
-        }
-
-        .settings-icon {
-          width: 16px;
-          height: 16px;
-          color: #6c9bd2;
-          flex-shrink: 0;
         }
 
         .form-input,
