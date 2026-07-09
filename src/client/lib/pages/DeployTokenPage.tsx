@@ -214,9 +214,7 @@ const DeployTokenPage: React.FC = () => {
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <circle cx="12" cy="12" r="3"></circle>
-                    <path d="M12 1v6m0 6v6"></path>
-                    <path d="M4.22 4.22l4.24 4.24m-4.24 4.24l4.24 4.24"></path>
-                    <path d="M19.78 4.22l-4.24 4.24m4.24 4.24l-4.24 4.24"></path>
+                    <path d="M12 1v6m0 6v6m4.22-15.22l-4.24 4.24m-4.24 4.24l-4.24 4.24m14.9 2.9l-4.24-4.24m-4.24-4.24l-4.24-4.24"></path>
                   </svg>
                 </button>
               </div>
@@ -482,22 +480,21 @@ const DeployTokenPage: React.FC = () => {
         }
 
         .settings-toggle-btn {
-          width: 40px;
-          height: 40px;
+          width: 32px;
+          height: 32px;
           display: flex;
           align-items: center;
           justify-content: center;
-          background: rgba(108, 155, 210, 0.1);
-          border: 1px solid #6c9bd2;
-          border-radius: 8px;
+          background: transparent;
+          border: none;
           color: #6c9bd2;
           cursor: pointer;
           transition: all 0.2s;
-          margin-left: 12px;
+          padding: 0;
         }
 
         .settings-toggle-btn:hover {
-          background: rgba(108, 155, 210, 0.2);
+          color: #8fb4d6;
         }
 
         .settings-toggle-btn svg {
