@@ -84,7 +84,6 @@ const App: React.FC = () => {
         return (
           <div className="page-layout">
             <div className="page-left">
-              <div className="page-list-title">LIQUIDITY POOLS</div>
               <LiquidityPoolsPage />
             </div>
             <div className="page-right">
