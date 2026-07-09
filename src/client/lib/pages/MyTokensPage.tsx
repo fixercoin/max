@@ -269,7 +269,6 @@ const MyTokensPage: React.FC = () => {
           gap: 20px;
           width: 100%;
           height: 100%;
-          min-height: 600px;
           padding: 20px;
           background: linear-gradient(135deg, #0f1419 0%, #151d28 100%);
           border-radius: 16px;
@@ -396,6 +395,7 @@ const MyTokensPage: React.FC = () => {
         /* Tokens Container Styles */
         .tokens-container {
           flex: 1;
+          min-height: 0;
           background: rgba(12, 17, 26, 0.8);
           border-radius: 12px;
           border: 1px solid #232a36;
