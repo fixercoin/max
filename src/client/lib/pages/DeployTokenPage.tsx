@@ -16,6 +16,8 @@ const DeployTokenPage: React.FC = () => {
   const [selectedNetwork, setSelectedNetwork] = useState<string>('mainnet-beta');
   const [selectedTokenStandard, setSelectedTokenStandard] = useState<string>('spl');
   const [selectedMintAuthority, setSelectedMintAuthority] = useState<string>('wallet');
+  const [showSettings, setShowSettings] = useState(false);
+  const [tokenBanner, setTokenBanner] = useState<string | null>(null);
 
   const presets = {
     custom: { name: 'MAX TOKEN', symbol: 'MAX', supply: 100000000, decimals: 6 },
@@ -41,6 +43,17 @@ const DeployTokenPage: React.FC = () => {
       const reader = new FileReader();
       reader.onloadend = () => {
         setTokenLogo(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setTokenBanner(reader.result as string);
       };
       reader.readAsDataURL(file);
     }
@@ -165,103 +178,6 @@ const DeployTokenPage: React.FC = () => {
           
           {/* LEFT COLUMN - DEPLOYMENT SETTINGS */}
           <div className="left-column">
-            <div className="column-header">DEPLOYMENT SETTINGS</div>
-            
-            <div className="status-card">
-              <div className="status-header">
-                <span className="status-title">CONNECTION STATUS</span>
-              </div>
-              <div className="status-content">
-                <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', margin: 0 }}>{status}</pre>
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">TOKEN PRESET</label>
-              <select 
-                className="form-select"
-                value={selectedPreset}
-                onChange={(e) => handlePresetChange(e.target.value)}
-              >
-                <option value="custom">CUSTOM TOKEN</option>
-                <option value="meme">MEME TOKEN</option>
-                <option value="utility">UTILITY TOKEN</option>
-                <option value="governance">GOVERNANCE TOKEN</option>
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">NETWORK</label>
-              <select 
-                className="form-select"
-                value={selectedNetwork}
-                onChange={(e) => setSelectedNetwork(e.target.value)}
-              >
-                <option value="devnet">DEVNET TEST</option>
-                <option value="mainnet-beta">MAINNET PRODUCTION</option>
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">TOKEN STANDARD</label>
-              <select 
-                className="form-select"
-                value={selectedTokenStandard}
-                onChange={(e) => setSelectedTokenStandard(e.target.value)}
-              >
-                <option value="spl">SPL TOKEN</option>
-                <option value="spl2022">SPL TOKEN 2022</option>
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">MINT AUTHORITY</label>
-              <select 
-                className="form-select"
-                value={selectedMintAuthority}
-                onChange={(e) => setSelectedMintAuthority(e.target.value)}
-              >
-                <option value="wallet">CURRENT WALLET</option>
-                <option value="multisig">MULTI-SIG COMING SOON</option>
-                <option value="timelock">TIME-LOCK COMING SOON</option>
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">QUICK SUPPLY OPTIONS</label>
-              <div className="supply-buttons">
-                <button onClick={() => handleQuickFill('small')} className="supply-btn">10K</button>
-                <button onClick={() => handleQuickFill('medium')} className="supply-btn">1M</button>
-                <button onClick={() => handleQuickFill('large')} className="supply-btn">1B</button>
-              </div>
-            </div>
-
-            <div className="info-card">
-              <div className="info-text">
-                <strong>DEPLOYMENT INFO</strong><br />
-                FEE: 0.05 SOL -
-                TIME: 30 SECONDS -
-                INCLUDES METADATA -
-                VERIFIED BY MAX DEX
-              </div>
-            </div>
-
-            {!dexClient && (
-              <button className="action-btn init-btn" onClick={initializeDex}>
-                INITIALIZE DEX FIRST
-              </button>
-            )}
-
-            <button 
-              className="action-btn deploy-btn" 
-              onClick={handleDeployToken}
-              disabled={!dexClient && !status.includes('ALREADY INITIALIZED')}
-            >
-              DEPLOY TOKEN ON MAX DEX
-            </button>
-
-            <div className="warning-text">
-            </div>
 
             {deployedTokens.length > 0 && (
               <div className="recent-card">
@@ -287,24 +203,192 @@ const DeployTokenPage: React.FC = () => {
 
           {/* RIGHT COLUMN - TOKEN CONFIGURATION */}
           <div className="right-column">
-            <div className="column-header">TOKEN CONFIGURATION</div>
-            
-            <div className="form-group">
-              <label className="form-label">TOKEN LOGO</label>
-              <div className="logo-container">
-                {tokenLogo ? (
-                  <div className="logo-preview">
-                    <img src={tokenLogo} alt="TOKEN LOGO" className="logo-img" />
-                    <button className="remove-logo" onClick={() => setTokenLogo(null)}>REMOVE</button>
+
+            <div className="info-section">
+              <div className="details-header">
+                <div className="info-section-header">TOKEN DETAILS</div>
+                <button
+                  className="settings-toggle-btn"
+                  onClick={() => setShowSettings(!showSettings)}
+                  title="Toggle settings"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M12 1v6m0 6v6m4.22-15.22l-4.24 4.24m-4.24 4.24l-4.24 4.24m14.9 2.9l-4.24-4.24m-4.24-4.24l-4.24-4.24"></path>
+                  </svg>
+                </button>
+              </div>
+
+              {showSettings && (
+                <div className="settings-panel">
+                  <div className="form-group">
+                    <label className="form-label">TOKEN PRESET</label>
+                    <select
+                      className="form-select"
+                      value={selectedPreset}
+                      onChange={(e) => handlePresetChange(e.target.value)}
+                    >
+                      <option value="custom">CUSTOM TOKEN</option>
+                      <option value="meme">MEME TOKEN</option>
+                      <option value="utility">UTILITY TOKEN</option>
+                      <option value="governance">GOVERNANCE TOKEN</option>
+                    </select>
                   </div>
-                ) : (
-                  <div className="logo-upload">
-                    <label className="upload-label">
-                      <input type="file" accept="image/*" onChange={handleImageUpload} className="logo-input" />
-                      <div className="upload-placeholder">CLICK TO UPLOAD LOGO</div>
-                    </label>
+
+                  <div className="form-group">
+                    <label className="form-label">NETWORK</label>
+                    <select
+                      className="form-select"
+                      value={selectedNetwork}
+                      onChange={(e) => setSelectedNetwork(e.target.value)}
+                    >
+                      <option value="devnet">DEVNET TEST</option>
+                      <option value="mainnet-beta">MAINNET PRODUCTION</option>
+                    </select>
                   </div>
+
+                  <div className="form-group">
+                    <label className="form-label">TOKEN STANDARD</label>
+                    <select
+                      className="form-select"
+                      value={selectedTokenStandard}
+                      onChange={(e) => setSelectedTokenStandard(e.target.value)}
+                    >
+                      <option value="spl">SPL TOKEN</option>
+                      <option value="spl2022">SPL TOKEN 2022</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">MINT AUTHORITY</label>
+                    <select
+                      className="form-select"
+                      value={selectedMintAuthority}
+                      onChange={(e) => setSelectedMintAuthority(e.target.value)}
+                    >
+                      <option value="wallet">CURRENT WALLET</option>
+                      <option value="multisig">MULTI-SIG COMING SOON</option>
+                      <option value="timelock">TIME-LOCK COMING SOON</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              <div className="media-upload-section">
+                <div className="form-group">
+                  <label className="form-label">TOKEN LOGO</label>
+                  <div className="logo-container">
+                    {tokenLogo ? (
+                      <div className="logo-preview">
+                        <img src={tokenLogo} alt="TOKEN LOGO" className="logo-img" />
+                        <button className="remove-logo" onClick={() => setTokenLogo(null)}>REMOVE</button>
+                      </div>
+                    ) : (
+                      <div className="logo-upload">
+                        <label className="upload-label">
+                          <input type="file" accept="image/*" onChange={handleImageUpload} className="logo-input" />
+                          <div className="upload-placeholder">CLICK TO UPLOAD LOGO</div>
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">TOKEN BANNER</label>
+                  <div className="banner-container">
+                    {tokenBanner ? (
+                      <div className="banner-preview">
+                        <img src={tokenBanner} alt="TOKEN BANNER" className="banner-img" />
+                        <button className="remove-banner" onClick={() => setTokenBanner(null)}>REMOVE</button>
+                      </div>
+                    ) : (
+                      <div className="banner-upload">
+                        <label className="upload-label">
+                          <input type="file" accept="image/*" onChange={handleBannerUpload} className="banner-input" />
+                          <div className="upload-placeholder">CLICK TO UPLOAD BANNER</div>
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="token-details-grid">
+                <div className="form-group">
+                  <label className="form-label">TOKEN NAME</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={tokenName}
+                    onChange={(e) => setTokenName(e.target.value.toUpperCase())}
+                    placeholder="Enter token name"
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">SYMBOL</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={tokenSymbol}
+                    onChange={(e) => setTokenSymbol(e.target.value.toUpperCase())}
+                    placeholder="Enter symbol"
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">DECIMALS</label>
+                  <input
+                    type="number"
+                    className="form-input"
+                    value={tokenDecimals}
+                    onChange={(e) => setTokenDecimals(parseInt(e.target.value))}
+                    min="0"
+                    max="9"
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">TOTAL SUPPLY</label>
+                  <input
+                    type="number"
+                    className="form-input"
+                    value={tokenSupply}
+                    onChange={(e) => setTokenSupply(parseInt(e.target.value))}
+                    min="1"
+                  />
+                </div>
+              </div>
+              <div className="supply-options-section">
+                <label className="form-label">QUICK SUPPLY OPTIONS</label>
+                <div className="supply-buttons">
+                  <button onClick={() => handleQuickFill('small')} className="supply-btn">10K</button>
+                  <button onClick={() => handleQuickFill('medium')} className="supply-btn">1M</button>
+                  <button onClick={() => handleQuickFill('large')} className="supply-btn">1B</button>
+                </div>
+              </div>
+
+              <div className="action-buttons-section">
+                {!dexClient && (
+                  <button className="action-btn init-btn" onClick={initializeDex}>
+                    INITIALIZE DEX FIRST
+                  </button>
                 )}
+                <button
+                  className="action-btn deploy-btn"
+                  onClick={handleDeployToken}
+                  disabled={!dexClient && !status.includes('ALREADY INITIALIZED')}
+                >
+                  DEPLOY TOKEN ON MAX DEX
+                </button>
+              </div>
+
+              <div className="deployment-info-section">
+                <div className="info-text">
+                  <strong>DEPLOYMENT INFO</strong><br />
+                  FEE: 0.05 SOL -
+                  TIME: 30 SECONDS -
+                  INCLUDES METADATA -
+                  VERIFIED BY MAX DEX
+                </div>
               </div>
             </div>
 
@@ -337,53 +421,6 @@ const DeployTokenPage: React.FC = () => {
               <div className="info-row">
                 <span className="info-label">ESTIMATED COST</span>
                 <span className="info-value">0.05 SOL</span>
-              </div>
-            </div>
-
-            <div className="info-section">
-              <div className="info-section-header">TOKEN DETAILS</div>
-              <div className="token-details-grid">
-                <div className="form-group">
-                  <label className="form-label">TOKEN NAME</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={tokenName}
-                    onChange={(e) => setTokenName(e.target.value.toUpperCase())}
-                    placeholder="MAX TOKEN"
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">SYMBOL</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={tokenSymbol}
-                    onChange={(e) => setTokenSymbol(e.target.value.toUpperCase())}
-                    placeholder="MAX"
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">DECIMALS</label>
-                  <input
-                    type="number"
-                    className="form-input"
-                    value={tokenDecimals}
-                    onChange={(e) => setTokenDecimals(parseInt(e.target.value))}
-                    min="0"
-                    max="9"
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">TOTAL SUPPLY</label>
-                  <input
-                    type="number"
-                    className="form-input"
-                    value={tokenSupply}
-                    onChange={(e) => setTokenSupply(parseInt(e.target.value))}
-                    min="1"
-                  />
-                </div>
               </div>
             </div>
           </div>
@@ -426,14 +463,71 @@ const DeployTokenPage: React.FC = () => {
           border-right: 1px solid #232a36;
         }
 
+        .details-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+
         .column-header {
           font-size: 20px;
           font-weight: 700;
           color: #6c9bd2;
-          margin-bottom: 24px;
           padding-bottom: 12px;
           border-bottom: 2px solid #6c9bd2;
           letter-spacing: 1px;
+          flex: 1;
+        }
+
+        .settings-toggle-btn {
+          width: 32px;
+          height: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: transparent;
+          border: none;
+          color: #6c9bd2;
+          cursor: pointer;
+          transition: all 0.2s;
+          padding: 0;
+        }
+
+        .settings-toggle-btn:hover {
+          color: #8fb4d6;
+        }
+
+        .settings-toggle-btn svg {
+          width: 18px;
+          height: 18px;
+        }
+
+        .settings-panel {
+          background: rgba(108, 155, 210, 0.05);
+          border: 1px solid #232a36;
+          border-radius: 12px;
+          padding: 20px;
+          margin-bottom: 20px;
+          animation: slideDown 0.2s ease-out;
+        }
+
+        @keyframes slideDown {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .settings-panel .form-group {
+          margin-bottom: 18px;
+        }
+
+        .settings-panel .form-group:last-child {
+          margin-bottom: 0;
         }
 
         .status-card {
@@ -493,6 +587,11 @@ const DeployTokenPage: React.FC = () => {
           outline: none;
           border-color: #6c9bd2;
           box-shadow: 0 0 0 2px rgba(108, 155, 210, 0.1);
+        }
+
+        .supply-options-section {
+          padding: 20px;
+          border-top: 1px solid #1e2a3a;
         }
 
         .supply-buttons {
@@ -699,8 +798,103 @@ const DeployTokenPage: React.FC = () => {
           display: block;
         }
 
-        .logo-input {
+        .logo-input,
+        .banner-input {
           display: none;
+        }
+
+        .media-upload-section {
+          padding: 20px;
+          border-bottom: 1px solid #1e2a3a;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 20px;
+        }
+
+        .media-upload-section .form-group {
+          margin-bottom: 0;
+        }
+
+        .banner-container {
+          margin-top: 5px;
+        }
+
+        .banner-preview {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 12px;
+          padding: 20px;
+          background: #0a0e15;
+          border: 1px solid #232a36;
+          border-radius: 12px;
+        }
+
+        .banner-img {
+          width: 100%;
+          height: 120px;
+          object-fit: cover;
+          border-radius: 8px;
+          border: 2px solid #6c9bd2;
+        }
+
+        .remove-banner {
+          padding: 6px 12px;
+          background: rgba(220, 38, 38, 0.2);
+          border: 1px solid #dc2626;
+          border-radius: 6px;
+          color: #dc2626;
+          font-size: 11px;
+          font-weight: 700;
+          cursor: pointer;
+          letter-spacing: 1px;
+        }
+
+        .remove-banner:hover {
+          background: rgba(220, 38, 38, 0.4);
+        }
+
+        .banner-upload {
+          padding: 30px;
+          background: #0a0e15;
+          border: 2px dashed #232a36;
+          border-radius: 12px;
+          text-align: center;
+          transition: all 0.2s;
+        }
+
+        .banner-upload:hover {
+          border-color: #6c9bd2;
+        }
+
+        .action-buttons-section {
+          padding: 20px;
+          border-top: 1px solid #1e2a3a;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+
+        .action-buttons-section .action-btn {
+          margin-bottom: 0;
+        }
+
+        .deployment-info-section {
+          padding: 20px;
+          border-top: 1px solid #1e2a3a;
+          background: rgba(108, 155, 210, 0.05);
+        }
+
+        .deployment-info-section .info-text {
+          font-size: 11px;
+          color: #8e9bae;
+          line-height: 1.8;
+          margin: 0;
+        }
+
+        .deployment-info-section .info-text strong {
+          color: #6c9bd2;
+          font-size: 12px;
         }
 
         .upload-placeholder {
@@ -805,6 +999,11 @@ const DeployTokenPage: React.FC = () => {
           }
 
           .token-details-grid {
+            grid-template-columns: 1fr;
+            gap: 16px;
+          }
+
+          .media-upload-section {
             grid-template-columns: 1fr;
             gap: 16px;
           }
