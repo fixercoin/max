@@ -308,153 +308,8 @@ const SwapRouterPage: React.FC = () => {
   };
 
   return (
-    <div className="swap-router-three-columns">
-      {/* LEFT COLUMN - TOKENS LIST WITH SEARCH - 20% */}
-      <div className="left-column">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-          <div className="column-header" style={{ margin: 0 }}>TOKENS LIST</div>
-          <button
-            onClick={handleManualRefresh}
-            disabled={isRefreshing}
-            style={{
-              padding: '6px 12px',
-              background: isRefreshing ? '#666' : '#6c9bd2',
-              border: 'none',
-              borderRadius: '4px',
-              color: 'white',
-              cursor: isRefreshing ? 'not-allowed' : 'pointer',
-              fontSize: '11px',
-              fontWeight: '700',
-              opacity: isRefreshing ? 0.6 : 1
-            }}
-            title="Refresh prices from DexScreener"
-          >
-            {isRefreshing ? '⏳ REFRESHING...' : '🔄 REFRESH'}
-          </button>
-        </div>
-
-        <div style={{ fontSize: '10px', color: '#888', marginBottom: '12px', textAlign: 'right' }}>
-          Last updated: {lastUpdated.toLocaleTimeString()}
-        </div>
-
-        <div className="search-container">
-          <input
-            type="text"
-            className="search-input"
-            placeholder="SEARCH TOKENS..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-
-        <div className="tokens-list">
-          {filteredTokens.length === 0 ? (
-            <div className="empty-message">NO TOKENS FOUND</div>
-          ) : (
-            filteredTokens.map((token, idx) => (
-              <div 
-                key={idx} 
-                className={`token-item ${selectedChartToken === token.mint ? 'active' : ''}`}
-                onClick={() => setSelectedChartToken(token.mint)}
-              >
-                <div className="token-info">
-                  {token.logo ? (
-                    <img src={token.logo} alt={token.symbol} className="token-logo-small" />
-                  ) : (
-                    <div className="token-logo-placeholder">{token.symbol.substring(0, 2)}</div>
-                  )}
-                  <div className="token-details">
-                    <div className="token-symbol">{token.symbol}</div>
-                    <div className="token-mint">{token.mint.slice(0, 6)}...</div>
-                  </div>
-                </div>
-                <div className="token-stats">
-                  <div className="token-price">${token.price?.toFixed(4) || '0.00'}</div>
-                  <div className={`token-change ${token.change24h >= 0 ? 'positive' : 'negative'}`}>
-                    {token.change24h >= 0 ? '+' : ''}{token.change24h?.toFixed(2)}%
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-
-      {/* CENTER COLUMN - TOKEN CHART WITH BIRDEYE - 50% */}
-      <div className="center-column">
-        <div className="column-header">TOKEN CHART</div>
-        
-        <div className="chart-container">
-          <iframe
-            src={getBirdeyeEmbedUrl(selectedChartToken)}
-            width="100%"
-            height="500"
-            frameBorder="0"
-            allowFullScreen
-            className="birdeye-chart"
-            title="Birdeye Chart"
-          />
-        </div>
-
-        <div className="chart-stats">
-          {tokenPrices[selectedChartToken] ? (
-            <>
-              <div className="chart-stat-item">
-                <span className="chart-stat-label">24H VOLUME</span>
-                <span className="chart-stat-value">
-                  ${tokenPrices[selectedChartToken]?.volume24h?.toLocaleString() || '0'}
-                </span>
-              </div>
-              <div className="chart-stat-item">
-                <span className="chart-stat-label">LIQUIDITY</span>
-                <span className="chart-stat-value">
-                  ${tokenPrices[selectedChartToken]?.liquidity?.toLocaleString() || '0'}
-                </span>
-              </div>
-              <div className="chart-stat-item">
-                <span className="chart-stat-label">VIEW ON BIRDEYE</span>
-                <span className="chart-stat-value">
-                  <a 
-                    href={getBirdeyeChartUrl(selectedChartToken)} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    style={{ color: '#6c9bd2', textDecoration: 'none' }}
-                  >
-                    CLICK HERE
-                  </a>
-                </span>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="chart-stat-item">
-                <span className="chart-stat-label">24H VOLUME</span>
-                <span className="chart-stat-value">LOADING...</span>
-              </div>
-              <div className="chart-stat-item">
-                <span className="chart-stat-label">LIQUIDITY</span>
-                <span className="chart-stat-value">LOADING...</span>
-              </div>
-              <div className="chart-stat-item">
-                <span className="chart-stat-label">VIEW ON BIRDEYE</span>
-                <span className="chart-stat-value">
-                  <a 
-                    href={getBirdeyeChartUrl(selectedChartToken)} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    style={{ color: '#6c9bd2', textDecoration: 'none' }}
-                  >
-                    CLICK HERE
-                  </a>
-                </span>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* RIGHT COLUMN - SWAP - 30% */}
-      <div className="right-column">
+    <div className="swap-container-full">
+      <div className="swap-wrapper">
         <div className="column-header">SWAP TOKENS</div>
         
         <div className="swap-container">
@@ -557,45 +412,24 @@ const SwapRouterPage: React.FC = () => {
       </div>
 
       <style>{`
-        .swap-router-three-columns {
+        .swap-container-full {
           display: flex;
           width: 100%;
-          min-height: 100vh;
+          min-height: 100%;
           background: linear-gradient(135deg, #0f1419 0%, #151d28 100%);
           margin: 0;
           padding: 0;
         }
 
-        .left-column {
-          flex: 0 0 20%;
+        .swap-wrapper {
+          width: 100%;
           display: flex;
           flex-direction: column;
           background: rgba(12, 17, 26, 0.9);
           padding: 20px;
           overflow-y: auto;
-          min-height: 100vh;
-          border-right: 1px solid #232a36;
-        }
-
-        .center-column {
-          flex: 0 0 50%;
-          display: flex;
-          flex-direction: column;
-          background: rgba(12, 17, 26, 0.9);
-          padding: 20px;
-          overflow-y: auto;
-          min-height: 100vh;
-          border-right: 1px solid #232a36;
-        }
-
-        .right-column {
-          flex: 0 0 30%;
-          display: flex;
-          flex-direction: column;
-          background: rgba(12, 17, 26, 0.9);
-          padding: 20px;
-          overflow-y: auto;
-          min-height: 100vh;
+          max-width: 600px;
+          margin: 0 auto;
         }
 
         .column-header {
