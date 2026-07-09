@@ -170,11 +170,26 @@ const Header: React.FC = () => {
   };
 
   const navItems = [
-    { id: 'deploy', label: 'Deploy Pool', icon: '📦' },
-    { id: 'pools', label: 'Liquidity', icon: '💧' },
-    { id: 'swap', label: 'Swap Tokens', icon: '🔄' },
-    { id: 'tokens', label: 'My Tokens', icon: '💰' }
+    { id: 'deploy', label: 'Deploy Pool', icon: 'deploy' },
+    { id: 'pools', label: 'Liquidity', icon: 'pools' },
+    { id: 'swap', label: 'Swap Tokens', icon: 'swap' },
+    { id: 'tokens', label: 'My Tokens', icon: 'tokens' }
   ];
+
+  const renderNavIcon = (iconType: string) => {
+    switch(iconType) {
+      case 'deploy':
+        return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>;
+      case 'pools':
+        return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v20M2 12h20M7 7h10M7 17h10"></path></svg>;
+      case 'swap':
+        return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>;
+      case 'tokens':
+        return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4M12 8h.01"></path></svg>;
+      default:
+        return null;
+    }
+  };
 
   return (
     <>
@@ -287,7 +302,7 @@ const Header: React.FC = () => {
             className={`mobile-nav-item ${currentPage === item.id ? 'active' : ''}`}
             onClick={() => setCurrentPage(item.id as PageType)}
           >
-            <div className="mobile-nav-icon">{item.icon}</div>
+            <div className="mobile-nav-icon">{renderNavIcon(item.icon)}</div>
             <div className="mobile-nav-label">{item.label}</div>
           </button>
         ))}

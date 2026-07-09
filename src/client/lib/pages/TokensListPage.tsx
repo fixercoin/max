@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAppContext } from '../../context/AppContext';
+import { useDexScreenerPrice } from '../hooks/useDexScreenerPrice';
 
 interface TradeHistory {
   id: string;
@@ -22,57 +24,11 @@ const TokensListPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('recent');
   const [tabActive, setTabActive] = useState<'info' | 'chart' | 'history' | 'holders'>('info');
-  const [tokenPrices, setTokenPrices] = useState<Record<string, any>>({});
   const [tradeHistory, setTradeHistory] = useState<TradeHistory[]>([]);
   const [tokenHolders, setTokenHolders] = useState<TokenHolder[]>([]);
 
-  // Fetch token price from DexScreener
-  const fetchTokenPrice = async (mintAddress: string) => {
-    try {
-      // Use CORS proxy to bypass CORS restrictions
-      const url = `https://cors-proxy.fringe.zone/https://api.dexscreener.com/latest/dex/token/${mintAddress}`;
-      const response = await fetch(url);
-
-      if (!response.ok) {
-        console.warn(`DexScreener API returned status ${response.status} for token ${mintAddress}`);
-        return null;
-      }
-
-      const data = await response.json();
-      if (data.pairs && data.pairs.length > 0) {
-        const pair = data.pairs[0];
-        return {
-          price: parseFloat(pair.priceUsd),
-          change24h: parseFloat(pair.priceChange?.h24 || 0),
-          volume24h: parseFloat(pair.volume?.h24 || 0),
-          liquidity: parseFloat(pair.liquidity?.usd || 0),
-          marketCap: parseFloat(pair.marketCap?.usd || 0),
-        };
-      }
-      return null;
-    } catch (error) {
-      console.error('Failed to fetch price for token:', mintAddress, error);
-      return null;
-    }
-  };
-
-  // Fetch prices for all tokens
-  useEffect(() => {
-    const fetchAllPrices = async () => {
-      const prices: Record<string, any> = {};
-      for (const token of deployedTokens) {
-        const priceData = await fetchTokenPrice(token.mint);
-        if (priceData) {
-          prices[token.mint] = priceData;
-        }
-      }
-      setTokenPrices(prices);
-    };
-
-    if (deployedTokens.length > 0) {
-      fetchAllPrices();
-    }
-  }, [deployedTokens]);
+  const tokenMints = useMemo(() => deployedTokens.map(t => t.mint), [deployedTokens]);
+  const { tokenPrices } = useDexScreenerPrice(tokenMints);
 
   // Mock trade history data
   useEffect(() => {

@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { PublicKey } from '@solana/web3.js';
 import { saveTransaction, getExplorerUrl } from '../transactionUtils';
+import { useDexScreenerPrice } from '../hooks/useDexScreenerPrice';
 
 const SwapRouterPage: React.FC = () => {
   const { wallet, dexClient, deployedTokens, pools, setPools } = useAppContext();
@@ -12,19 +14,23 @@ const SwapRouterPage: React.FC = () => {
   const [swapStatus, setSwapStatus] = useState('');
   const [selectedPool, setSelectedPool] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [tokenPrices, setTokenPrices] = useState<Record<string, any>>({});
   const [selectedChartToken, setSelectedChartToken] = useState<string>('So11111111111111111111111111111111111111112');
-  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Define base tokens - moved inside useMemo or defined as constant outside component
-  const baseTokens = React.useMemo(() => [
+  const baseTokens = useMemo(() => [
     { symbol: 'USDC', mint: 'Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr', decimals: 6, price: 1.00, change24h: 0.05, volume: 1250000, logo: null },
     { symbol: 'SOL', mint: 'So11111111111111111111111111111111111111112', decimals: 9, price: 145.20, change24h: 2.5, volume: 890000, logo: null },
   ], []);
 
-  // Create allTokens array after deployedTokens is available
-  const allTokens = React.useMemo(() => {
+  const allTokenMints = useMemo(() => {
+    const mints = baseTokens.map(t => t.mint);
+    const deployedMints = deployedTokens.map(t => t.mint);
+    return [...new Set([...mints, ...deployedMints])];
+  }, [baseTokens, deployedTokens]);
+
+  const { tokenPrices, lastUpdated, refetch } = useDexScreenerPrice(allTokenMints);
+
+  const allTokens = useMemo(() => {
     return [
       ...baseTokens,
       ...deployedTokens.map(t => ({
@@ -39,61 +45,9 @@ const SwapRouterPage: React.FC = () => {
     ];
   }, [baseTokens, deployedTokens]);
 
-  // Fetch token prices from DexScreener API
-  const fetchTokenPrice = async (mintAddress: string) => {
-    try {
-      // Use CORS proxy to bypass CORS restrictions
-      const url = `https://cors-proxy.fringe.zone/https://api.dexscreener.com/latest/dex/token/${mintAddress}`;
-      const response = await fetch(url);
-
-      if (!response.ok) {
-        console.warn(`DexScreener API returned status ${response.status} for token ${mintAddress}`);
-        return null;
-      }
-
-      const data = await response.json();
-      if (data.pairs && data.pairs.length > 0) {
-        const pair = data.pairs[0];
-        return {
-          price: parseFloat(pair.priceUsd),
-          change24h: parseFloat(pair.priceChange?.h24 || 0),
-          volume24h: parseFloat(pair.volume?.h24 || 0),
-          liquidity: parseFloat(pair.liquidity?.usd || 0),
-          pairAddress: pair.pairAddress
-        };
-      }
-      return null;
-    } catch (error) {
-      console.error('Failed to fetch price for token:', mintAddress, error);
-      return null;
-    }
-  };
-
-  // Fetch prices for all tokens with polling for real-time updates
-  const fetchAllPrices = React.useCallback(async () => {
-    const prices: Record<string, any> = {};
-    for (const token of allTokens) {
-      const priceData = await fetchTokenPrice(token.mint);
-      if (priceData) {
-        prices[token.mint] = priceData;
-      }
-    }
-    setTokenPrices(prices);
-    setLastUpdated(new Date());
-    setIsRefreshing(false);
-  }, [allTokens]);
-
-  useEffect(() => {
-    if (allTokens.length > 0) {
-      fetchAllPrices();
-      const intervalId = setInterval(fetchAllPrices, 5000);
-      return () => clearInterval(intervalId);
-    }
-  }, [allTokens, fetchAllPrices]);
-
   const handleManualRefresh = () => {
     setIsRefreshing(true);
-    fetchAllPrices();
+    refetch().then(() => setIsRefreshing(false));
   };
 
   // Update token objects with real-time prices
