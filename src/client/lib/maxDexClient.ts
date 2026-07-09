@@ -151,6 +151,33 @@ export class MaxDexClient {
   }
 
   async createPool(tokenA: PublicKey, tokenB: PublicKey, feeBps: number): Promise<PublicKey> {
+    if (!tokenA || !tokenB) {
+      throw new Error('Token addresses are required');
+    }
+
+    if (tokenA.toString() === tokenB.toString()) {
+      throw new Error('Cannot create pool with same token for both pairs');
+    }
+
+    if (feeBps < 0 || feeBps > 10000) {
+      throw new Error('Fee must be between 0 and 10000 basis points');
+    }
+
+    const tokenAValidation = await this.validateTokenExists(tokenA);
+    if (!tokenAValidation.exists) {
+      throw new Error(`Token A does not exist: ${tokenAValidation.error}`);
+    }
+
+    const tokenBValidation = await this.validateTokenExists(tokenB);
+    if (!tokenBValidation.exists) {
+      throw new Error(`Token B does not exist: ${tokenBValidation.error}`);
+    }
+
+    const exists = await this.poolExists(tokenA, tokenB);
+    if (exists) {
+      throw new Error('Pool for this token pair already exists');
+    }
+
     if (!this.dexState) {
       const [address] = await PublicKey.findProgramAddress(
         [Buffer.from("dex_state")],
@@ -173,28 +200,35 @@ export class MaxDexClient {
     const tokenAVaultKeypair = Keypair.generate();
     const tokenBVaultKeypair = Keypair.generate();
 
-    const tx = await this.program.methods
-      .createPool(feeBps)
-      .accounts({
-        authority: this.provider.wallet.publicKey,
-        pool: pool,
-        tokenA: tokenA,
-        tokenB: tokenB,
-        tokenAVault: tokenAVaultKeypair.publicKey,
-        tokenBVault: tokenBVaultKeypair.publicKey,
-        lpMint: lpMintKeypair.publicKey,
-        poolAuthority: poolAuthority,
-        dexState: this.dexState,
-        tokenProgram: TOKEN_PROGRAM_ID,
-        systemProgram: anchor.web3.SystemProgram.programId,
-        rent: anchor.web3.SYSVAR_RENT_PUBKEY,
-      })
-      .signers([lpMintKeypair, tokenAVaultKeypair, tokenBVaultKeypair])
-      .rpc();
+    try {
+      const tx = await this.program.methods
+        .createPool(feeBps)
+        .accounts({
+          authority: this.provider.wallet.publicKey,
+          pool: pool,
+          tokenA: tokenA,
+          tokenB: tokenB,
+          tokenAVault: tokenAVaultKeypair.publicKey,
+          tokenBVault: tokenBVaultKeypair.publicKey,
+          lpMint: lpMintKeypair.publicKey,
+          poolAuthority: poolAuthority,
+          dexState: this.dexState,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          systemProgram: anchor.web3.SystemProgram.programId,
+          rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+        })
+        .signers([lpMintKeypair, tokenAVaultKeypair, tokenBVaultKeypair])
+        .rpc();
 
-    await this.confirmTx(tx);
-    this.lastTx = tx;
-    return pool;
+      await this.confirmTx(tx);
+      this.lastTx = tx;
+      return pool;
+    } catch (e: any) {
+      if (e.message?.includes('insufficient funds')) {
+        throw new Error('Insufficient SOL for transaction fees and account creation');
+      }
+      throw e;
+    }
   }
 
   async addLiquidity(
@@ -204,61 +238,92 @@ export class MaxDexClient {
     tokenA: PublicKey,
     tokenB: PublicKey
   ): Promise<string> {
+    const userPublicKey = this.provider.wallet.publicKey;
+
+    const validation = await this.validateLiquidityAddition(tokenA, tokenB, amountA, amountB, userPublicKey);
+    if (!validation.valid) {
+      throw new Error(validation.error || 'Liquidity validation failed');
+    }
+
     const poolAccount = await this.program.account.poolAccount.fetch(pool) as any;
-    const userTokenA = await getAssociatedTokenAddress(tokenA, this.provider.wallet.publicKey);
-    const userTokenB = await getAssociatedTokenAddress(tokenB, this.provider.wallet.publicKey);
-    const userLpToken = await getAssociatedTokenAddress(poolAccount.lpMint as PublicKey, this.provider.wallet.publicKey);
-    const poolAuthority = this.getPoolAuthorityAddress(pool);
+    const lpMint = poolAccount.lpMint as PublicKey;
 
-    const tx = await this.program.methods
-      .addLiquidity(new anchor.BN(amountA), new anchor.BN(amountB))
-      .accounts({
-        user: this.provider.wallet.publicKey,
-        userTokenA: userTokenA,
-        userTokenB: userTokenB,
-        userLpToken: userLpToken,
-        pool: pool,
-        poolTokenAVault: poolAccount.tokenAVault as PublicKey,
-        poolTokenBVault: poolAccount.tokenBVault as PublicKey,
-        lpMint: poolAccount.lpMint as PublicKey,
-        poolAuthority: poolAuthority,
-        tokenProgram: TOKEN_PROGRAM_ID,
-        systemProgram: anchor.web3.SystemProgram.programId,
-      } as any)
-      .rpc();
+    try {
+      const userTokenA = await this.ensureAssociatedTokenAccount(tokenA, userPublicKey);
+      const userTokenB = await this.ensureAssociatedTokenAccount(tokenB, userPublicKey);
+      const userLpToken = await this.ensureAssociatedTokenAccount(lpMint, userPublicKey);
 
-    await this.confirmTx(tx);
-    this.lastTx = tx;
-    return tx;
+      const poolAuthority = this.getPoolAuthorityAddress(pool);
+
+      const tx = await this.program.methods
+        .addLiquidity(new anchor.BN(amountA), new anchor.BN(amountB))
+        .accounts({
+          user: userPublicKey,
+          userTokenA: userTokenA,
+          userTokenB: userTokenB,
+          userLpToken: userLpToken,
+          pool: pool,
+          poolTokenAVault: poolAccount.tokenAVault as PublicKey,
+          poolTokenBVault: poolAccount.tokenBVault as PublicKey,
+          lpMint: lpMint,
+          poolAuthority: poolAuthority,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          systemProgram: anchor.web3.SystemProgram.programId,
+        } as any)
+        .rpc();
+
+      await this.confirmTx(tx);
+      this.lastTx = tx;
+      return tx;
+    } catch (e: any) {
+      if (e.message?.includes('insufficient funds')) {
+        throw new Error('Insufficient SOL for transaction fees');
+      }
+      throw e;
+    }
   }
 
   async removeLiquidity(pool: PublicKey, lpAmount: number): Promise<string> {
+    const userPublicKey = this.provider.wallet.publicKey;
     const poolAccount = await this.program.account.poolAccount.fetch(pool) as any;
-    const userTokenA = await getAssociatedTokenAddress(poolAccount.tokenA as PublicKey, this.provider.wallet.publicKey);
-    const userTokenB = await getAssociatedTokenAddress(poolAccount.tokenB as PublicKey, this.provider.wallet.publicKey);
-    const userLpToken = await getAssociatedTokenAddress(poolAccount.lpMint as PublicKey, this.provider.wallet.publicKey);
-    const poolAuthority = this.getPoolAuthorityAddress(pool);
 
-    const tx = await this.program.methods
-      .removeLiquidity(new anchor.BN(lpAmount))
-      .accounts({
-        user: this.provider.wallet.publicKey,
-        userTokenA: userTokenA,
-        userTokenB: userTokenB,
-        userLpToken: userLpToken,
-        pool: pool,
-        poolTokenAVault: poolAccount.tokenAVault as PublicKey,
-        poolTokenBVault: poolAccount.tokenBVault as PublicKey,
-        lpMint: poolAccount.lpMint as PublicKey,
-        poolAuthority: poolAuthority,
-        tokenProgram: TOKEN_PROGRAM_ID,
-        systemProgram: anchor.web3.SystemProgram.programId,
-      } as any)
-      .rpc();
+    try {
+      const tokenA = poolAccount.tokenA as PublicKey;
+      const tokenB = poolAccount.tokenB as PublicKey;
+      const lpMint = poolAccount.lpMint as PublicKey;
 
-    await this.confirmTx(tx);
-    this.lastTx = tx;
-    return tx;
+      const userTokenA = await this.ensureAssociatedTokenAccount(tokenA, userPublicKey);
+      const userTokenB = await this.ensureAssociatedTokenAccount(tokenB, userPublicKey);
+      const userLpToken = await this.ensureAssociatedTokenAccount(lpMint, userPublicKey);
+
+      const poolAuthority = this.getPoolAuthorityAddress(pool);
+
+      const tx = await this.program.methods
+        .removeLiquidity(new anchor.BN(lpAmount))
+        .accounts({
+          user: userPublicKey,
+          userTokenA: userTokenA,
+          userTokenB: userTokenB,
+          userLpToken: userLpToken,
+          pool: pool,
+          poolTokenAVault: poolAccount.tokenAVault as PublicKey,
+          poolTokenBVault: poolAccount.tokenBVault as PublicKey,
+          lpMint: lpMint,
+          poolAuthority: poolAuthority,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          systemProgram: anchor.web3.SystemProgram.programId,
+        } as any)
+        .rpc();
+
+      await this.confirmTx(tx);
+      this.lastTx = tx;
+      return tx;
+    } catch (e: any) {
+      if (e.message?.includes('insufficient funds')) {
+        throw new Error('Insufficient SOL for transaction fees');
+      }
+      throw e;
+    }
   }
 
   async swap(
@@ -473,6 +538,55 @@ export class MaxDexClient {
       return { valid: true };
     } catch (e: any) {
       return { valid: false, error: e.message || 'Failed to validate swap' };
+    }
+  }
+
+  async validateTokenExists(mint: PublicKey): Promise<{ exists: boolean; error?: string }> {
+    try {
+      const accountInfo = await this.connection.getAccountInfo(mint);
+      if (!accountInfo) {
+        return { exists: false, error: 'Token mint does not exist' };
+      }
+      return { exists: true };
+    } catch (e: any) {
+      return { exists: false, error: e.message || 'Failed to validate token' };
+    }
+  }
+
+  async poolExists(tokenA: PublicKey, tokenB: PublicKey): Promise<boolean> {
+    try {
+      const [poolAddress] = await PublicKey.findProgramAddress(
+        [Buffer.from("pool"), tokenA.toBuffer(), tokenB.toBuffer()],
+        DEX_PROGRAM_ID
+      );
+      const poolAccount = await this.program.account.poolAccount.fetch(poolAddress);
+      return !!poolAccount;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  async validateLiquidityAddition(
+    tokenA: PublicKey,
+    tokenB: PublicKey,
+    amountA: number,
+    amountB: number,
+    userPublicKey: PublicKey
+  ): Promise<{ valid: boolean; error?: string }> {
+    try {
+      const balanceA = await this.getTokenBalance(tokenA, userPublicKey);
+      if (balanceA < amountA) {
+        return { valid: false, error: `Insufficient tokenA balance. Have: ${balanceA}, Need: ${amountA}` };
+      }
+
+      const balanceB = await this.getTokenBalance(tokenB, userPublicKey);
+      if (balanceB < amountB) {
+        return { valid: false, error: `Insufficient tokenB balance. Have: ${balanceB}, Need: ${amountB}` };
+      }
+
+      return { valid: true };
+    } catch (e: any) {
+      return { valid: false, error: e.message || 'Failed to validate liquidity addition' };
     }
   }
 }

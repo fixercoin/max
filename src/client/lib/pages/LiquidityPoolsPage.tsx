@@ -56,23 +56,54 @@ const LiquidityPoolsPage: React.FC = () => {
 
   const handleCreatePool = async () => {
     if (!wallet || !dexClient) {
-      alert('CONNECT WALLET AND INITIALIZE DEX FIRST');
+      setPoolStatus('ERROR: CONNECT WALLET AND INITIALIZE DEX FIRST');
       return;
     }
 
     if (!tokenAMint || !tokenBMint) {
-      alert('ENTER BOTH TOKEN MINT ADDRESSES');
+      setPoolStatus('ERROR: ENTER BOTH TOKEN MINT ADDRESSES');
       return;
     }
 
-    setPoolStatus('CREATING POOL ON MAX DEX...');
+    if (tokenAMint === tokenBMint) {
+      setPoolStatus('ERROR: CANNOT CREATE POOL WITH SAME TOKEN');
+      return;
+    }
+
+    if (feeBps < 0 || feeBps > 10000) {
+      setPoolStatus('ERROR: FEE MUST BE BETWEEN 0 AND 10000 BASIS POINTS');
+      return;
+    }
+
+    setPoolStatus('VALIDATING TOKEN ADDRESSES...');
 
     try {
       const tokenAPubkey = new PublicKey(tokenAMint);
       const tokenBPubkey = new PublicKey(tokenBMint);
-      
+
+      setPoolStatus('CHECKING IF TOKENS EXIST ON CHAIN...');
+      const tokenAExists = await dexClient.validateTokenExists(tokenAPubkey);
+      if (!tokenAExists.exists) {
+        setPoolStatus(`ERROR: TOKEN A NOT FOUND - ${tokenAExists.error}`);
+        return;
+      }
+
+      const tokenBExists = await dexClient.validateTokenExists(tokenBPubkey);
+      if (!tokenBExists.exists) {
+        setPoolStatus(`ERROR: TOKEN B NOT FOUND - ${tokenBExists.error}`);
+        return;
+      }
+
+      setPoolStatus('CHECKING IF POOL ALREADY EXISTS...');
+      const poolAlreadyExists = await dexClient.poolExists(tokenAPubkey, tokenBPubkey);
+      if (poolAlreadyExists) {
+        setPoolStatus('ERROR: POOL FOR THIS TOKEN PAIR ALREADY EXISTS');
+        return;
+      }
+
+      setPoolStatus('CREATING POOL ON MAX DEX...');
       const poolAddress = await dexClient.createPool(tokenAPubkey, tokenBPubkey, feeBps);
-      
+
       const tokenAData = deployedTokens.find((t) => t.mint === tokenAMint);
       const tokenBData = deployedTokens.find((t) => t.mint === tokenBMint);
       const symbolA = tokenAData ? tokenAData.symbol : tokenAMint.slice(0, 6);
@@ -96,8 +127,10 @@ const LiquidityPoolsPage: React.FC = () => {
       localStorage.setItem('MAX_pools', JSON.stringify(newPools));
 
       setPoolStatus(
-        `POOL CREATED: ${symbolA}/${symbolB} | FEE: ${feeBps / 100}%\n` +
-        `POOL ADDRESS: ${poolAddress.toString()}`
+        `✓ POOL CREATED SUCCESSFULLY!\n` +
+        `PAIR: ${symbolA}/${symbolB}\n` +
+        `FEE: ${feeBps / 100}%\n` +
+        `ADDRESS: ${poolAddress.toString()}`
       );
       setTokenAMint('');
       setTokenBMint('');
@@ -106,13 +139,16 @@ const LiquidityPoolsPage: React.FC = () => {
         loadPoolsFromChain();
       }, 2000);
     } catch (e: any) {
-      setPoolStatus(`POOL CREATION FAILED: ${e.message}`);
+      const errorMsg = e.message || 'Unknown error';
+      const cleanError = errorMsg.replace(/Error: /g, '').substring(0, 150);
+      setPoolStatus(`ERROR: ${cleanError}`);
+      console.error('Pool creation error:', e);
     }
   };
 
   const handleAddLiquidity = async () => {
     if (!wallet || !dexClient || !selectedPool) {
-      alert('SELECT A POOL FIRST');
+      setLiquidityStatus('ERROR: SELECT A POOL FIRST');
       return;
     }
 
@@ -120,16 +156,17 @@ const LiquidityPoolsPage: React.FC = () => {
     const amountB = parseFloat(addAmountB);
 
     if (isNaN(amountA) || isNaN(amountB) || amountA <= 0 || amountB <= 0) {
-      alert('ENTER VALID AMOUNTS FOR BOTH TOKENS');
+      setLiquidityStatus('ERROR: ENTER VALID AMOUNTS FOR BOTH TOKENS');
       return;
     }
 
-    setLiquidityStatus('REQUESTING TRANSACTION SIGNATURE...');
+    setLiquidityStatus('VALIDATING BALANCES...');
 
     try {
       const tokenAPubkey = new PublicKey(selectedPool.tokenA);
       const tokenBPubkey = new PublicKey(selectedPool.tokenB);
       const poolPubkey = new PublicKey(selectedPool.poolAddress);
+      const userPubkey = new PublicKey(wallet.publicKey);
 
       const tokenAData = deployedTokens.find((t) => t.mint === selectedPool.tokenA);
       const tokenBData = deployedTokens.find((t) => t.mint === selectedPool.tokenB);
@@ -137,6 +174,26 @@ const LiquidityPoolsPage: React.FC = () => {
       const rawAmountA = amountA * Math.pow(10, tokenAData?.decimals || 6);
       const rawAmountB = amountB * Math.pow(10, tokenBData?.decimals || 6);
 
+      setLiquidityStatus('CHECKING TOKEN BALANCES...');
+      const balanceA = await dexClient.getTokenBalance(tokenAPubkey, userPubkey);
+      if (balanceA < rawAmountA) {
+        const readable = (balanceA / Math.pow(10, tokenAData?.decimals || 6)).toFixed(6);
+        setLiquidityStatus(`ERROR: INSUFFICIENT ${selectedPool.symbolA} BALANCE\nHave: ${readable}, Need: ${amountA}`);
+        return;
+      }
+
+      const balanceB = await dexClient.getTokenBalance(tokenBPubkey, userPubkey);
+      if (balanceB < rawAmountB) {
+        const readable = (balanceB / Math.pow(10, tokenBData?.decimals || 6)).toFixed(6);
+        setLiquidityStatus(`ERROR: INSUFFICIENT ${selectedPool.symbolB} BALANCE\nHave: ${readable}, Need: ${amountB}`);
+        return;
+      }
+
+      setLiquidityStatus('PREPARING ASSOCIATED TOKEN ACCOUNTS...');
+      await dexClient.ensureAssociatedTokenAccount(tokenAPubkey, userPubkey);
+      await dexClient.ensureAssociatedTokenAccount(tokenBPubkey, userPubkey);
+
+      setLiquidityStatus('REQUESTING TRANSACTION SIGNATURE...');
       const txHash = await dexClient.addLiquidity(poolPubkey, rawAmountA, rawAmountB, tokenAPubkey, tokenBPubkey);
 
       const explorerUrl = getExplorerUrl(txHash, 'mainnet');
@@ -153,13 +210,21 @@ const LiquidityPoolsPage: React.FC = () => {
         explorerUrl
       });
 
-      setLiquidityStatus(`LIQUIDITY ADDED SUCCESSFULLY!\n${explorerUrl}`);
+      setLiquidityStatus(
+        `✓ LIQUIDITY ADDED SUCCESSFULLY!\n` +
+        `AMOUNT A: ${amountA} ${selectedPool.symbolA}\n` +
+        `AMOUNT B: ${amountB} ${selectedPool.symbolB}\n\n` +
+        `VIEW ON EXPLORER: ${explorerUrl}`
+      );
       setAddAmountA('');
       setAddAmountB('');
 
       await loadPoolsFromChain();
     } catch (e: any) {
-      setLiquidityStatus(`ADD LIQUIDITY FAILED: ${e.message}`);
+      const errorMsg = e.message || 'Unknown error';
+      const cleanError = errorMsg.replace(/Error: /g, '').substring(0, 150);
+      setLiquidityStatus(`ERROR: ${cleanError}`);
+      console.error('Add liquidity error:', e);
     }
   };
 
@@ -198,16 +263,35 @@ const LiquidityPoolsPage: React.FC = () => {
 
   const handleRemoveLiquidity = async (lpAmount: number) => {
     if (!wallet || !dexClient || !selectedPool) {
-      alert('SELECT A POOL FIRST');
+      setLiquidityStatus('ERROR: SELECT A POOL FIRST');
       return;
     }
 
-    setLiquidityStatus('REQUESTING TRANSACTION SIGNATURE...');
+    if (lpAmount <= 0) {
+      setLiquidityStatus('ERROR: ENTER VALID LP AMOUNT');
+      return;
+    }
+
+    setLiquidityStatus('VALIDATING LP TOKEN BALANCE...');
 
     try {
       const poolPubkey = new PublicKey(selectedPool.poolAddress);
+      const userPubkey = new PublicKey(wallet.publicKey);
+
+      const poolAccount = await dexClient.program.account.poolAccount.fetch(poolPubkey) as any;
+      const lpMint = poolAccount.lpMint as any;
+
       const rawLpAmount = lpAmount * Math.pow(10, 9);
 
+      setLiquidityStatus('CHECKING LP TOKEN BALANCE...');
+      const lpBalance = await dexClient.getTokenBalance(lpMint, userPubkey);
+      if (lpBalance < rawLpAmount) {
+        const readable = (lpBalance / Math.pow(10, 9)).toFixed(6);
+        setLiquidityStatus(`ERROR: INSUFFICIENT LP TOKEN BALANCE\nHave: ${readable}, Need: ${lpAmount}`);
+        return;
+      }
+
+      setLiquidityStatus('REQUESTING TRANSACTION SIGNATURE...');
       const txHash = await dexClient.removeLiquidity(poolPubkey, rawLpAmount);
 
       const explorerUrl = getExplorerUrl(txHash, 'mainnet');
@@ -224,10 +308,17 @@ const LiquidityPoolsPage: React.FC = () => {
         explorerUrl
       });
 
-      setLiquidityStatus(`LIQUIDITY REMOVED SUCCESSFULLY!\n${explorerUrl}`);
+      setLiquidityStatus(
+        `✓ LIQUIDITY REMOVED SUCCESSFULLY!\n` +
+        `LP TOKENS BURNED: ${lpAmount}\n\n` +
+        `VIEW ON EXPLORER: ${explorerUrl}`
+      );
       await loadPoolsFromChain();
     } catch (e: any) {
-      setLiquidityStatus(`REMOVE LIQUIDITY FAILED: ${e.message}`);
+      const errorMsg = e.message || 'Unknown error';
+      const cleanError = errorMsg.replace(/Error: /g, '').substring(0, 150);
+      setLiquidityStatus(`ERROR: ${cleanError}`);
+      console.error('Remove liquidity error:', e);
     }
   };
 
