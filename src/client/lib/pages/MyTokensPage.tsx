@@ -281,15 +281,14 @@ const MyTokensPage: React.FC = () => {
 
         .dropdowns-line {
           display: flex;
-          gap: 10px;
+          gap: 8px;
           align-items: center;
           flex-wrap: nowrap;
-          overflow-x: auto;
         }
 
         .dropdowns-line select {
-          flex-shrink: 0;
-          min-width: 140px;
+          flex: 1;
+          min-width: 0;
         }
 
         .column-title {
@@ -327,14 +326,15 @@ const MyTokensPage: React.FC = () => {
         }
 
         .dropdown-select {
-          padding: 8px 10px;
+          padding: 6px 8px;
           background: #0c111a;
           border: 1px solid #232a36;
-          border-radius: 6px;
+          border-radius: 4px;
           color: #e6edf5;
-          font-size: 12px;
+          font-size: 11px;
           cursor: pointer;
           transition: all 0.2s;
+          white-space: nowrap;
         }
 
         .dropdown-select:hover {
@@ -556,16 +556,9 @@ const MyTokensPage: React.FC = () => {
 
         /* Responsive Design */
         @media (max-width: 1200px) {
-          .dropdowns-line {
-            gap: 8px;
-          }
-
-          .dropdowns-line select {
-            min-width: 130px;
-          }
-
           .dropdown-select {
-            font-size: 11px;
+            font-size: 10px;
+            padding: 5px 6px;
           }
         }
 
@@ -582,13 +575,9 @@ const MyTokensPage: React.FC = () => {
             gap: 6px;
           }
 
-          .dropdowns-line select {
-            min-width: 110px;
-          }
-
           .dropdown-select {
-            font-size: 10px;
-            padding: 6px 8px;
+            font-size: 9px;
+            padding: 5px 6px;
           }
         }
 
@@ -608,11 +597,12 @@ const MyTokensPage: React.FC = () => {
           }
 
           .dropdowns-line {
-            gap: 8px;
+            gap: 6px;
           }
 
-          .dropdowns-line select {
-            min-width: 100px;
+          .dropdown-select {
+            font-size: 9px;
+            padding: 5px 6px;
           }
 
           .token-card-header {
