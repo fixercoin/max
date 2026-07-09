@@ -673,4 +673,53 @@ export class MaxDexClient {
       throw e;
     }
   }
+
+  async claimDexFees(
+    tokenMint: PublicKey,
+    feeReceiver: PublicKey
+  ): Promise<string> {
+    if (!this.dexState) {
+      const [address] = await PublicKey.findProgramAddress(
+        [Buffer.from("dex_state")],
+        DEX_PROGRAM_ID
+      );
+      this.dexState = address;
+    }
+
+    try {
+      const dexState = await this.program.account.dexState.fetch(this.dexState) as any;
+
+      const dexTokenVault = await this.ensureAssociatedTokenAccount(
+        tokenMint,
+        this.dexState
+      );
+
+      const feeTokenAccount = await this.ensureAssociatedTokenAccount(
+        tokenMint,
+        feeReceiver
+      );
+
+      const tx = await this.executeRpcWithTimeout(
+        this.program.methods
+          .claimDexFees(tokenMint)
+          .accounts({
+            authority: this.provider.wallet.publicKey,
+            dexState: this.dexState,
+            dexTokenVault: dexTokenVault,
+            feeTokenAccount: feeTokenAccount,
+            tokenProgram: TOKEN_PROGRAM_ID,
+          } as any)
+          .rpc()
+      );
+
+      await this.confirmTx(tx);
+      this.lastTx = tx;
+      return tx;
+    } catch (e: any) {
+      if (e.message?.includes('insufficient funds')) {
+        throw new Error('Insufficient SOL for transaction fees');
+      }
+      throw e;
+    }
+  }
 }

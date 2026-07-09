@@ -5,6 +5,7 @@ declare_id!("36qH8uWkekoCa8qzFcBCkmZqUr9Y9JzFgtwct7RsJrTk");
 
 const FIXED_SUPPLY: u64 = 1_000_000_000;
 const AUTO_BURN_DAYS: i64 = 730;
+const DEX_FEE_BPS: u16 = 5; // 0.05% DEX protocol fee
 
 #[program]
 pub mod max {
@@ -16,9 +17,10 @@ pub mod max {
         dex_state.token_count = 0;
         dex_state.pool_count = 0;
         dex_state.total_volume = 0;
+        dex_state.total_dex_fees_collected = 0;
         dex_state.creation_timestamp = Clock::get()?.unix_timestamp;
         dex_state.bump = ctx.bumps.dex_state;
-        
+
         msg!("MAX DEX initialized");
         Ok(())
     }
@@ -377,11 +379,19 @@ pub mod max {
 
         pool.total_volume = pool.total_volume.checked_add(amount_in as u128).ok_or(DexError::MathOverflow)?;
         pool.total_fees_collected = pool.total_fees_collected.checked_add(fee_amount as u128).ok_or(DexError::MathOverflow)?;
-        
+
+        // Calculate and collect DEX protocol fee (0.05%)
+        let dex_fee_amount = (amount_in as u128)
+            .checked_mul(DEX_FEE_BPS as u128)
+            .ok_or(DexError::MathOverflow)?
+            .checked_div(10000)
+            .ok_or(DexError::MathOverflow)?;
+
         let dex_state = &mut ctx.accounts.dex_state;
         dex_state.total_volume = dex_state.total_volume.checked_add(amount_in as u128).ok_or(DexError::MathOverflow)?;
+        dex_state.total_dex_fees_collected = dex_state.total_dex_fees_collected.checked_add(dex_fee_amount).ok_or(DexError::MathOverflow)?;
 
-        msg!("Swap: {} in -> {} out, fee: {}", amount_in, amount_out, fee_amount);
+        msg!("Swap: {} in -> {} out, pool_fee: {}, dex_fee: {}", amount_in, amount_out, fee_amount, dex_fee_amount);
         Ok(())
     }
 
@@ -428,6 +438,39 @@ pub mod max {
 
         pool.total_fees_collected = 0;
         msg!("Pool fees claimed: {}", fee_amount);
+        Ok(())
+    }
+
+    pub fn claim_dex_fees(
+        ctx: Context<ClaimDexFees>,
+        token_mint: Pubkey,
+    ) -> Result<()> {
+        require!(ctx.accounts.authority.key() == ctx.accounts.dex_state.authority, DexError::Unauthorized);
+
+        let dex_state = &mut ctx.accounts.dex_state;
+        require!(dex_state.total_dex_fees_collected > 0, DexError::InvalidAmount);
+
+        let fee_amount = dex_state.total_dex_fees_collected as u64;
+        require!(ctx.accounts.fee_token_account.mint.key() == token_mint, DexError::InvalidTokenPair);
+
+        let dex_state_key = ctx.accounts.dex_state.key();
+        let dex_authority_seeds = &[b"dex_state", &[dex_state.bump]];
+
+        token::transfer(
+            CpiContext::new_with_signer(
+                ctx.accounts.token_program.to_account_info(),
+                Transfer {
+                    from: ctx.accounts.dex_token_vault.to_account_info(),
+                    to: ctx.accounts.fee_token_account.to_account_info(),
+                    authority: ctx.accounts.dex_state.to_account_info(),
+                },
+                &[dex_authority_seeds],
+            ),
+            fee_amount,
+        )?;
+
+        dex_state.total_dex_fees_collected = 0;
+        msg!("DEX fees claimed: {}", fee_amount);
         Ok(())
     }
 }
@@ -649,6 +692,19 @@ pub struct ClaimPoolFees<'info> {
 }
 
 #[derive(Accounts)]
+pub struct ClaimDexFees<'info> {
+    #[account(mut)]
+    pub authority: Signer<'info>,
+    #[account(mut)]
+    pub dex_state: Account<'info, DexState>,
+    #[account(mut)]
+    pub dex_token_vault: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub fee_token_account: Account<'info, TokenAccount>,
+    pub token_program: Program<'info, Token>,
+}
+
+#[derive(Accounts)]
 pub struct VerifyToken<'info> {
     pub authority: Signer<'info>,
     #[account(mut)]
@@ -667,6 +723,7 @@ pub struct DexState {
     pub pool_count: u64,
     pub total_volume: u128,
     pub creation_timestamp: i64,
+    pub total_dex_fees_collected: u128,
     pub bump: u8,
 }
 
