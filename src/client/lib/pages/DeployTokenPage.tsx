@@ -177,8 +177,15 @@ const DeployTokenPage: React.FC = () => {
             </div>
 
             <div className="form-group">
-              <label className="form-label">TOKEN PRESET</label>
-              <select 
+              <label className="form-label">
+                <svg className="settings-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="3"></circle>
+                  <path d="M12 1v6m0 6v6m4.22-15.22l-4.24 4.24m-4.24 4.24l-4.24 4.24m14.9 2.9l-4.24-4.24m-4.24-4.24l-4.24-4.24"></path>
+                  <circle cx="12" cy="12" r="9"></circle>
+                </svg>
+                TOKEN PRESET
+              </label>
+              <select
                 className="form-select"
                 value={selectedPreset}
                 onChange={(e) => handlePresetChange(e.target.value)}
@@ -191,8 +198,15 @@ const DeployTokenPage: React.FC = () => {
             </div>
 
             <div className="form-group">
-              <label className="form-label">NETWORK</label>
-              <select 
+              <label className="form-label">
+                <svg className="settings-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="3"></circle>
+                  <path d="M12 1v6m0 6v6m4.22-15.22l-4.24 4.24m-4.24 4.24l-4.24 4.24m14.9 2.9l-4.24-4.24m-4.24-4.24l-4.24-4.24"></path>
+                  <circle cx="12" cy="12" r="9"></circle>
+                </svg>
+                NETWORK
+              </label>
+              <select
                 className="form-select"
                 value={selectedNetwork}
                 onChange={(e) => setSelectedNetwork(e.target.value)}
@@ -203,8 +217,15 @@ const DeployTokenPage: React.FC = () => {
             </div>
 
             <div className="form-group">
-              <label className="form-label">TOKEN STANDARD</label>
-              <select 
+              <label className="form-label">
+                <svg className="settings-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="3"></circle>
+                  <path d="M12 1v6m0 6v6m4.22-15.22l-4.24 4.24m-4.24 4.24l-4.24 4.24m14.9 2.9l-4.24-4.24m-4.24-4.24l-4.24-4.24"></path>
+                  <circle cx="12" cy="12" r="9"></circle>
+                </svg>
+                TOKEN STANDARD
+              </label>
+              <select
                 className="form-select"
                 value={selectedTokenStandard}
                 onChange={(e) => setSelectedTokenStandard(e.target.value)}
@@ -215,8 +236,15 @@ const DeployTokenPage: React.FC = () => {
             </div>
 
             <div className="form-group">
-              <label className="form-label">MINT AUTHORITY</label>
-              <select 
+              <label className="form-label">
+                <svg className="settings-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="3"></circle>
+                  <path d="M12 1v6m0 6v6m4.22-15.22l-4.24 4.24m-4.24 4.24l-4.24 4.24m14.9 2.9l-4.24-4.24m-4.24-4.24l-4.24-4.24"></path>
+                  <circle cx="12" cy="12" r="9"></circle>
+                </svg>
+                MINT AUTHORITY
+              </label>
+              <select
                 className="form-select"
                 value={selectedMintAuthority}
                 onChange={(e) => setSelectedMintAuthority(e.target.value)}
@@ -468,12 +496,21 @@ const DeployTokenPage: React.FC = () => {
         }
 
         .form-label {
-          display: block;
+          display: flex;
+          align-items: center;
+          gap: 8px;
           font-size: 11px;
           font-weight: 700;
           color: #8e9bae;
           margin-bottom: 8px;
           letter-spacing: 1px;
+        }
+
+        .settings-icon {
+          width: 16px;
+          height: 16px;
+          color: #6c9bd2;
+          flex-shrink: 0;
         }
 
         .form-input,
