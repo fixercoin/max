@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import React, { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { PublicKey } from '@solana/web3.js';
 import { saveTransaction, getExplorerUrl } from '../transactionUtils';
