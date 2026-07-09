@@ -73,7 +73,6 @@ const App: React.FC = () => {
         return (
           <div className="page-layout">
             <div className="page-left">
-              <div className="page-list-title">DEPLOY TOKEN</div>
               <DeployTokenPage />
             </div>
             <div className="page-right">
