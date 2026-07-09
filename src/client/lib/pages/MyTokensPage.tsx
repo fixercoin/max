@@ -281,9 +281,15 @@ const MyTokensPage: React.FC = () => {
 
         .dropdowns-line {
           display: flex;
-          gap: 12px;
+          gap: 10px;
           align-items: center;
-          flex-wrap: wrap;
+          flex-wrap: nowrap;
+          overflow-x: auto;
+        }
+
+        .dropdowns-line select {
+          flex-shrink: 0;
+          min-width: 140px;
         }
 
         .column-title {
@@ -551,7 +557,11 @@ const MyTokensPage: React.FC = () => {
         /* Responsive Design */
         @media (max-width: 1200px) {
           .dropdowns-line {
-            gap: 10px;
+            gap: 8px;
+          }
+
+          .dropdowns-line select {
+            min-width: 130px;
           }
 
           .dropdown-select {
@@ -561,7 +571,7 @@ const MyTokensPage: React.FC = () => {
 
         @media (max-width: 900px) {
           .stats-line {
-            gap: 14px;
+            gap: 12px;
           }
 
           .stat-number {
@@ -569,7 +579,11 @@ const MyTokensPage: React.FC = () => {
           }
 
           .dropdowns-line {
-            gap: 8px;
+            gap: 6px;
+          }
+
+          .dropdowns-line select {
+            min-width: 110px;
           }
 
           .dropdown-select {
@@ -590,18 +604,15 @@ const MyTokensPage: React.FC = () => {
           }
 
           .stats-line {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 8px;
-          }
-
-          .dropdowns-line {
-            flex-direction: column;
             gap: 10px;
           }
 
-          .dropdown-group-inline {
-            min-width: 100%;
+          .dropdowns-line {
+            gap: 8px;
+          }
+
+          .dropdowns-line select {
+            min-width: 100px;
           }
 
           .token-card-header {
