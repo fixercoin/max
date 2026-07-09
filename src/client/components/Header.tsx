@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
+import type { PageType } from '../../App';
 
 declare global {
   interface Window {
@@ -168,38 +169,46 @@ const Header: React.FC = () => {
     return `${address.slice(0, 28)}...`;
   };
 
+  const navItems = [
+    { id: 'deploy', label: 'Deploy Pool', icon: '📦' },
+    { id: 'pools', label: 'Liquidity', icon: '💧' },
+    { id: 'swap', label: 'Swap Tokens', icon: '🔄' },
+    { id: 'tokens', label: 'My Tokens', icon: '💰' }
+  ];
+
   return (
-    <header className="fixed-header">
-      <div className="brand">
-        <h1>MAX</h1>
-      </div>
-      <nav className="nav-menu">
-        <button
-          className={`nav-btn ${currentPage === 'deploy' ? 'active' : ''}`}
-          onClick={() => setCurrentPage('deploy')}
-        >
-          Deploy
-        </button>
-        <button
-          className={`nav-btn ${currentPage === 'pools' ? 'active' : ''}`}
-          onClick={() => setCurrentPage('pools')}
-        >
-          Pools
-        </button>
-        <button
-          className={`nav-btn ${currentPage === 'swap' ? 'active' : ''}`}
-          onClick={() => setCurrentPage('swap')}
-        >
-          Swap
-        </button>
-        <button
-          className={`nav-btn ${currentPage === 'tokens' ? 'active' : ''}`}
-          onClick={() => setCurrentPage('tokens')}
-        >
-          Tokens
-        </button>
-      </nav>
-      <div className="wallet-section">
+    <>
+      <header className="fixed-header">
+        <div className="brand">
+          <h1>MAX</h1>
+        </div>
+        <nav className="nav-menu">
+          <button
+            className={`nav-btn ${currentPage === 'deploy' ? 'active' : ''}`}
+            onClick={() => setCurrentPage('deploy')}
+          >
+            Deploy
+          </button>
+          <button
+            className={`nav-btn ${currentPage === 'pools' ? 'active' : ''}`}
+            onClick={() => setCurrentPage('pools')}
+          >
+            Pools
+          </button>
+          <button
+            className={`nav-btn ${currentPage === 'swap' ? 'active' : ''}`}
+            onClick={() => setCurrentPage('swap')}
+          >
+            Swap
+          </button>
+          <button
+            className={`nav-btn ${currentPage === 'tokens' ? 'active' : ''}`}
+            onClick={() => setCurrentPage('tokens')}
+          >
+            Tokens
+          </button>
+        </nav>
+        <div className="wallet-section">
         {wallet ? (
           <>
             <div className="wallet-info">
@@ -269,7 +278,21 @@ const Header: React.FC = () => {
           </>
         )}
       </div>
-    </header>
+      </header>
+
+      <nav className="mobile-bottom-nav">
+        {navItems.map((item) => (
+          <button
+            key={item.id}
+            className={`mobile-nav-item ${currentPage === item.id ? 'active' : ''}`}
+            onClick={() => setCurrentPage(item.id as PageType)}
+          >
+            <div className="mobile-nav-icon">{item.icon}</div>
+            <div className="mobile-nav-label">{item.label}</div>
+          </button>
+        ))}
+      </nav>
+    </>
   );
 };
 
