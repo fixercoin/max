@@ -14,9 +14,9 @@ const DEVNET_EXPLORER = 'https://explorer.solana.com/tx';
 const TESTNET_EXPLORER = 'https://explorer.solana.com/tx?cluster=testnet';
 const MAINNET_EXPLORER = 'https://explorer.solana.com/tx';
 
-export function getExplorerUrl(txHash: string, network: 'devnet' | 'testnet' | 'mainnet' = 'devnet'): string {
+export function getExplorerUrl(txHash: string, network: 'devnet' | 'testnet' | 'mainnet' = 'mainnet'): string {
   const baseUrl = network === 'testnet' ? TESTNET_EXPLORER : network === 'mainnet' ? MAINNET_EXPLORER : DEVNET_EXPLORER;
-  return `${baseUrl}/${txHash}?cluster=${network}`;
+  return `${baseUrl}/${txHash}?cluster=${network === 'mainnet' ? '' : network}`.replace('?cluster=', network === 'mainnet' ? '' : '?cluster=');
 }
 
 export function saveTransaction(tx: Transaction): void {

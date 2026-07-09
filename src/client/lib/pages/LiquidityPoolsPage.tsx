@@ -139,7 +139,7 @@ const LiquidityPoolsPage: React.FC = () => {
 
       const txHash = await dexClient.addLiquidity(poolPubkey, rawAmountA, rawAmountB, tokenAPubkey, tokenBPubkey);
 
-      const explorerUrl = getExplorerUrl(txHash, 'devnet');
+      const explorerUrl = getExplorerUrl(txHash, 'mainnet');
 
       saveTransaction({
         id: Date.now().toString(),
@@ -210,7 +210,7 @@ const LiquidityPoolsPage: React.FC = () => {
 
       const txHash = await dexClient.removeLiquidity(poolPubkey, rawLpAmount);
 
-      const explorerUrl = getExplorerUrl(txHash, 'devnet');
+      const explorerUrl = getExplorerUrl(txHash, 'mainnet');
 
       saveTransaction({
         id: Date.now().toString(),

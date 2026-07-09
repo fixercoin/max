@@ -228,7 +228,7 @@ const SwapRouterPage: React.FC = () => {
       setPools(updatedPools);
 
       const outputAmount = ((rawAmountOut / Math.pow(10, toToken.decimals))).toFixed(6);
-      const explorerUrl = getExplorerUrl(txHash, 'devnet');
+      const explorerUrl = getExplorerUrl(txHash, 'mainnet');
 
       saveTransaction({
         id: Date.now().toString(),
