@@ -109,94 +109,93 @@ const MyTokensPage: React.FC = () => {
 
   return (
     <div className="my-tokens-two-column-layout">
-      {/* Left Column - Dropdowns */}
-      <div className="left-column">
-        <div className="dropdowns-container">
-          <h3 className="column-title">⚙️ Token Filters</h3>
-          
-          {/* Statistics Summary Card */}
-          <div className="stats-summary">
-            <div className="stat-item">
+      {/* Token Filters Bar */}
+      <div className="filters-bar-container">
+        <div className="filters-bar">
+          <div className="filters-title">⚙️ Token Filters</div>
+
+          {/* Stats Line */}
+          <div className="stats-line">
+            <div className="stat-item-inline">
               <span className="stat-label">Total Tokens</span>
               <span className="stat-number">{totalTokens}</span>
             </div>
-            <div className="stat-item">
+            <div className="stat-item-inline">
               <span className="stat-label">Verified</span>
               <span className="stat-number verified">{verifiedTokens}</span>
             </div>
-            <div className="stat-item">
+            <div className="stat-item-inline">
               <span className="stat-label">Unverified</span>
               <span className="stat-number unverified">{totalTokens - verifiedTokens}</span>
             </div>
-            <div className="stat-item">
+            <div className="stat-item-inline">
               <span className="stat-label">Total Supply</span>
               <span className="stat-number">{totalSupply.toLocaleString()}</span>
             </div>
           </div>
 
-          {/* Dropdown 1 */}
-          <div className="dropdown-group">
-            <label className="dropdown-label">Sort By</label>
-            <select 
-              className="dropdown-select"
-              value={selectedSortBy}
-              onChange={(e) => setSelectedSortBy(e.target.value)}
-            >
-              <option value="recent">📅 Most Recent</option>
-              <option value="name">📝 Token Name</option>
-              <option value="symbol">🔤 Symbol</option>
-              <option value="supply">💰 Total Supply</option>
-            </select>
-          </div>
+          {/* Dropdowns Line */}
+          <div className="dropdowns-line">
+            <div className="dropdown-group-inline">
+              <label className="dropdown-label">Sort By</label>
+              <select
+                className="dropdown-select"
+                value={selectedSortBy}
+                onChange={(e) => setSelectedSortBy(e.target.value)}
+              >
+                <option value="recent">📅 Most Recent</option>
+                <option value="name">📝 Token Name</option>
+                <option value="symbol">🔤 Symbol</option>
+                <option value="supply">💰 Total Supply</option>
+              </select>
+            </div>
 
-          {/* Dropdown 2 */}
-          <div className="dropdown-group">
-            <label className="dropdown-label">Verification Status</label>
-            <select 
-              className="dropdown-select"
-              value={selectedFilterStatus}
-              onChange={(e) => setSelectedFilterStatus(e.target.value)}
-            >
-              <option value="all">🌐 All Tokens</option>
-              <option value="verified">✓ Verified Only</option>
-              <option value="unverified">⚠️ Unverified Only</option>
-            </select>
-          </div>
+            <div className="dropdown-group-inline">
+              <label className="dropdown-label">Verification Status</label>
+              <select
+                className="dropdown-select"
+                value={selectedFilterStatus}
+                onChange={(e) => setSelectedFilterStatus(e.target.value)}
+              >
+                <option value="all">🌐 All Tokens</option>
+                <option value="verified">✓ Verified Only</option>
+                <option value="unverified">⚠️ Unverified Only</option>
+              </select>
+            </div>
 
-          {/* Dropdown 3 */}
-          <div className="dropdown-group">
-            <label className="dropdown-label">Token Type</label>
-            <select 
-              className="dropdown-select"
-              value={selectedTokenType}
-              onChange={(e) => setSelectedTokenType(e.target.value)}
-            >
-              <option value="all">🪙 All Types</option>
-              <option value="meme">🐸 Meme Coins</option>
-              <option value="utility">⚡ Utility Tokens</option>
-            </select>
-          </div>
+            <div className="dropdown-group-inline">
+              <label className="dropdown-label">Token Type</label>
+              <select
+                className="dropdown-select"
+                value={selectedTokenType}
+                onChange={(e) => setSelectedTokenType(e.target.value)}
+              >
+                <option value="all">🪙 All Types</option>
+                <option value="meme">🐸 Meme Coins</option>
+                <option value="utility">⚡ Utility Tokens</option>
+              </select>
+            </div>
 
-          {/* Dropdown 4 */}
-          <div className="dropdown-group">
-            <label className="dropdown-label">View Mode</label>
-            <select 
-              className="dropdown-select"
-              value={selectedViewMode}
-              onChange={(e) => setSelectedViewMode(e.target.value)}
-            >
-              <option value="details">📋 Token Details</option>
-              <option value="stats">📊 Market Stats</option>
-            </select>
+            <div className="dropdown-group-inline">
+              <label className="dropdown-label">View Mode</label>
+              <select
+                className="dropdown-select"
+                value={selectedViewMode}
+                onChange={(e) => setSelectedViewMode(e.target.value)}
+              >
+                <option value="details">📋 Token Details</option>
+                <option value="stats">📊 Market Stats</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Right Column - Cards */}
-      <div className="right-column">
+      {/* Tokens Container */}
+      <div className="tokens-container">
         <div className="cards-container">
           <h3 className="column-title">
-            📦 Your Tokens 
+            📦 Your Tokens
             <span className="token-count-badge">{filteredTokens.length} tokens</span>
           </h3>
           
@@ -266,6 +265,7 @@ const MyTokensPage: React.FC = () => {
       <style>{`
         .my-tokens-two-column-layout {
           display: flex;
+          flex-direction: column;
           gap: 20px;
           width: 100%;
           height: 100%;
@@ -275,21 +275,53 @@ const MyTokensPage: React.FC = () => {
           border-radius: 16px;
         }
 
-        /* Left Column Styles */
-        .left-column {
-          flex: 0 0 300px;
+        /* Filters Bar Styles */
+        .filters-bar-container {
+          width: 100%;
           background: rgba(12, 17, 26, 0.8);
           border-radius: 12px;
           border: 1px solid #232a36;
-          overflow-y: auto;
           backdrop-filter: blur(10px);
         }
 
-        .dropdowns-container {
-          padding: 20px;
+        .filters-bar {
+          padding: 16px 20px;
           display: flex;
           flex-direction: column;
-          gap: 24px;
+          gap: 12px;
+        }
+
+        .filters-title {
+          font-size: 14px;
+          font-weight: 600;
+          color: #6c9bd2;
+        }
+
+        .stats-line {
+          display: flex;
+          gap: 20px;
+          align-items: center;
+          flex-wrap: wrap;
+        }
+
+        .stat-item-inline {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .dropdowns-line {
+          display: flex;
+          gap: 16px;
+          align-items: flex-end;
+          flex-wrap: wrap;
+        }
+
+        .dropdown-group-inline {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          min-width: 160px;
         }
 
         .column-title {
@@ -312,34 +344,14 @@ const MyTokensPage: React.FC = () => {
           color: #6c9bd2;
         }
 
-        /* Stats Summary */
-        .stats-summary {
-          background: linear-gradient(135deg, #0f1419 0%, #0c111a 100%);
-          border-radius: 10px;
-          padding: 16px;
-          border: 1px solid #1e2a3a;
-          margin-bottom: 8px;
-        }
-
-        .stat-item {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 8px 0;
-          border-bottom: 1px solid #1e2a3a;
-        }
-
-        .stat-item:last-child {
-          border-bottom: none;
-        }
-
         .stat-label {
-          font-size: 12px;
+          font-size: 11px;
           color: #8e9bae;
+          font-weight: 500;
         }
 
         .stat-number {
-          font-size: 16px;
+          font-size: 13px;
           font-weight: 700;
           color: #e6edf5;
         }
@@ -352,14 +364,8 @@ const MyTokensPage: React.FC = () => {
           color: #e74c3c;
         }
 
-        .dropdown-group {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-        }
-
         .dropdown-label {
-          font-size: 12px;
+          font-size: 11px;
           font-weight: 500;
           color: #8e9bae;
           text-transform: uppercase;
@@ -367,12 +373,12 @@ const MyTokensPage: React.FC = () => {
         }
 
         .dropdown-select {
-          padding: 10px 12px;
+          padding: 8px 10px;
           background: #0c111a;
           border: 1px solid #232a36;
-          border-radius: 8px;
+          border-radius: 6px;
           color: #e6edf5;
-          font-size: 13px;
+          font-size: 12px;
           cursor: pointer;
           transition: all 0.2s;
         }
@@ -387,8 +393,8 @@ const MyTokensPage: React.FC = () => {
           box-shadow: 0 0 0 2px rgba(108, 155, 210, 0.1);
         }
 
-        /* Right Column Styles */
-        .right-column {
+        /* Tokens Container Styles */
+        .tokens-container {
           flex: 1;
           background: rgba(12, 17, 26, 0.8);
           border-radius: 12px;
@@ -575,42 +581,60 @@ const MyTokensPage: React.FC = () => {
         }
 
         /* Scrollbar Styles */
-        .left-column::-webkit-scrollbar,
-        .right-column::-webkit-scrollbar {
+        .tokens-container::-webkit-scrollbar {
           width: 6px;
         }
 
-        .left-column::-webkit-scrollbar-track,
-        .right-column::-webkit-scrollbar-track {
+        .tokens-container::-webkit-scrollbar-track {
           background: #0c111a;
           border-radius: 3px;
         }
 
-        .left-column::-webkit-scrollbar-thumb,
-        .right-column::-webkit-scrollbar-thumb {
+        .tokens-container::-webkit-scrollbar-thumb {
           background: #232a36;
           border-radius: 3px;
         }
 
-        .left-column::-webkit-scrollbar-thumb:hover,
-        .right-column::-webkit-scrollbar-thumb:hover {
+        .tokens-container::-webkit-scrollbar-thumb:hover {
           background: #6c9bd2;
         }
 
         /* Responsive Design */
-        @media (max-width: 1024px) {
-          .my-tokens-two-column-layout {
-            flex-direction: column;
+        @media (max-width: 1200px) {
+          .dropdowns-line {
+            gap: 12px;
           }
 
-          .left-column {
-            flex: none;
-            height: auto;
-            max-height: 400px;
+          .dropdown-group-inline {
+            min-width: 140px;
+          }
+        }
+
+        @media (max-width: 900px) {
+          .stats-line {
+            gap: 16px;
           }
 
-          .right-column {
-            flex: none;
+          .stat-item-inline {
+            gap: 4px;
+          }
+
+          .stat-label,
+          .dropdown-label {
+            font-size: 10px;
+          }
+
+          .stat-number {
+            font-size: 12px;
+          }
+
+          .dropdown-group-inline {
+            min-width: 130px;
+          }
+
+          .dropdown-select {
+            font-size: 11px;
+            padding: 6px 8px;
           }
         }
 
@@ -618,6 +642,26 @@ const MyTokensPage: React.FC = () => {
           .my-tokens-two-column-layout {
             padding: 12px;
             gap: 12px;
+          }
+
+          .filters-bar {
+            padding: 12px 16px;
+            gap: 10px;
+          }
+
+          .stats-line {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+          }
+
+          .dropdowns-line {
+            flex-direction: column;
+            gap: 10px;
+          }
+
+          .dropdown-group-inline {
+            min-width: 100%;
           }
 
           .token-card-header {
