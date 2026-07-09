@@ -195,7 +195,7 @@ const TokensListPage: React.FC = () => {
                     </div>
                   </div>
                   <div className="token-list-price">
-                    <div className="price-value">${typeof getTokenPrice(token.mint) === 'number' ? getTokenPrice(token.mint).toFixed(4) : getTokenPrice(token.mint)}</div>
+                    <div className="price-value">${(() => { const price = getTokenPrice(token.mint); return typeof price === 'number' ? price.toFixed(4) : price; })()}</div>
                     <div className={`price-change ${getChange24h(token.mint) >= 0 ? 'positive' : 'negative'}`}>
                       {getChange24h(token.mint) >= 0 ? '+' : ''}{getChange24h(token.mint).toFixed(2)}%
                     </div>
@@ -220,7 +220,7 @@ const TokensListPage: React.FC = () => {
                   </div>
                 </div>
                 <div className="token-header-price">
-                  <div className="token-price-large">${typeof getTokenPrice(selectedToken.mint) === 'number' ? getTokenPrice(selectedToken.mint).toFixed(4) : getTokenPrice(selectedToken.mint)}</div>
+                  <div className="token-price-large">${(() => { const price = getTokenPrice(selectedToken.mint); return typeof price === 'number' ? price.toFixed(4) : price; })()}</div>
                   <div className={`token-change-large ${getChange24h(selectedToken.mint) >= 0 ? 'positive' : 'negative'}`}>
                     {getChange24h(selectedToken.mint) >= 0 ? '+' : ''}{getChange24h(selectedToken.mint).toFixed(2)}% (24h)
                   </div>
