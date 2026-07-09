@@ -116,77 +116,53 @@ const MyTokensPage: React.FC = () => {
 
           {/* Stats Line */}
           <div className="stats-line">
-            <div className="stat-item-inline">
-              <span className="stat-label">Total Tokens</span>
-              <span className="stat-number">{totalTokens}</span>
-            </div>
-            <div className="stat-item-inline">
-              <span className="stat-label">Verified</span>
-              <span className="stat-number verified">{verifiedTokens}</span>
-            </div>
-            <div className="stat-item-inline">
-              <span className="stat-label">Unverified</span>
-              <span className="stat-number unverified">{totalTokens - verifiedTokens}</span>
-            </div>
-            <div className="stat-item-inline">
-              <span className="stat-label">Total Supply</span>
-              <span className="stat-number">{totalSupply.toLocaleString()}</span>
-            </div>
+            <span className="stat-number">{totalTokens}</span>
+            <span className="stat-number verified">{verifiedTokens}</span>
+            <span className="stat-number unverified">{totalTokens - verifiedTokens}</span>
+            <span className="stat-number">{totalSupply.toLocaleString()}</span>
           </div>
 
           {/* Dropdowns Line */}
           <div className="dropdowns-line">
-            <div className="dropdown-group-inline">
-              <label className="dropdown-label">Sort By</label>
-              <select
-                className="dropdown-select"
-                value={selectedSortBy}
-                onChange={(e) => setSelectedSortBy(e.target.value)}
-              >
-                <option value="recent">📅 Most Recent</option>
-                <option value="name">📝 Token Name</option>
-                <option value="symbol">🔤 Symbol</option>
-                <option value="supply">💰 Total Supply</option>
-              </select>
-            </div>
+            <select
+              className="dropdown-select"
+              value={selectedSortBy}
+              onChange={(e) => setSelectedSortBy(e.target.value)}
+            >
+              <option value="recent">📅 Most Recent</option>
+              <option value="name">📝 Token Name</option>
+              <option value="symbol">🔤 Symbol</option>
+              <option value="supply">💰 Total Supply</option>
+            </select>
 
-            <div className="dropdown-group-inline">
-              <label className="dropdown-label">Verification Status</label>
-              <select
-                className="dropdown-select"
-                value={selectedFilterStatus}
-                onChange={(e) => setSelectedFilterStatus(e.target.value)}
-              >
-                <option value="all">🌐 All Tokens</option>
-                <option value="verified">✓ Verified Only</option>
-                <option value="unverified">⚠️ Unverified Only</option>
-              </select>
-            </div>
+            <select
+              className="dropdown-select"
+              value={selectedFilterStatus}
+              onChange={(e) => setSelectedFilterStatus(e.target.value)}
+            >
+              <option value="all">🌐 All Tokens</option>
+              <option value="verified">✓ Verified Only</option>
+              <option value="unverified">⚠️ Unverified Only</option>
+            </select>
 
-            <div className="dropdown-group-inline">
-              <label className="dropdown-label">Token Type</label>
-              <select
-                className="dropdown-select"
-                value={selectedTokenType}
-                onChange={(e) => setSelectedTokenType(e.target.value)}
-              >
-                <option value="all">🪙 All Types</option>
-                <option value="meme">🐸 Meme Coins</option>
-                <option value="utility">⚡ Utility Tokens</option>
-              </select>
-            </div>
+            <select
+              className="dropdown-select"
+              value={selectedTokenType}
+              onChange={(e) => setSelectedTokenType(e.target.value)}
+            >
+              <option value="all">🪙 All Types</option>
+              <option value="meme">🐸 Meme Coins</option>
+              <option value="utility">⚡ Utility Tokens</option>
+            </select>
 
-            <div className="dropdown-group-inline">
-              <label className="dropdown-label">View Mode</label>
-              <select
-                className="dropdown-select"
-                value={selectedViewMode}
-                onChange={(e) => setSelectedViewMode(e.target.value)}
-              >
-                <option value="details">📋 Token Details</option>
-                <option value="stats">📊 Market Stats</option>
-              </select>
-            </div>
+            <select
+              className="dropdown-select"
+              value={selectedViewMode}
+              onChange={(e) => setSelectedViewMode(e.target.value)}
+            >
+              <option value="details">📋 Token Details</option>
+              <option value="stats">📊 Market Stats</option>
+            </select>
           </div>
         </div>
       </div>
@@ -303,24 +279,11 @@ const MyTokensPage: React.FC = () => {
           flex-wrap: wrap;
         }
 
-        .stat-item-inline {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-        }
-
         .dropdowns-line {
           display: flex;
-          gap: 16px;
-          align-items: flex-end;
+          gap: 12px;
+          align-items: center;
           flex-wrap: wrap;
-        }
-
-        .dropdown-group-inline {
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-          min-width: 160px;
         }
 
         .column-title {
@@ -343,12 +306,6 @@ const MyTokensPage: React.FC = () => {
           color: #6c9bd2;
         }
 
-        .stat-label {
-          font-size: 11px;
-          color: #8e9bae;
-          font-weight: 500;
-        }
-
         .stat-number {
           font-size: 13px;
           font-weight: 700;
@@ -361,14 +318,6 @@ const MyTokensPage: React.FC = () => {
 
         .stat-number.unverified {
           color: #e74c3c;
-        }
-
-        .dropdown-label {
-          font-size: 11px;
-          font-weight: 500;
-          color: #8e9bae;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
         }
 
         .dropdown-select {
@@ -602,38 +551,29 @@ const MyTokensPage: React.FC = () => {
         /* Responsive Design */
         @media (max-width: 1200px) {
           .dropdowns-line {
-            gap: 12px;
+            gap: 10px;
           }
 
-          .dropdown-group-inline {
-            min-width: 140px;
+          .dropdown-select {
+            font-size: 11px;
           }
         }
 
         @media (max-width: 900px) {
           .stats-line {
-            gap: 16px;
-          }
-
-          .stat-item-inline {
-            gap: 4px;
-          }
-
-          .stat-label,
-          .dropdown-label {
-            font-size: 10px;
+            gap: 14px;
           }
 
           .stat-number {
             font-size: 12px;
           }
 
-          .dropdown-group-inline {
-            min-width: 130px;
+          .dropdowns-line {
+            gap: 8px;
           }
 
           .dropdown-select {
-            font-size: 11px;
+            font-size: 10px;
             padding: 6px 8px;
           }
         }
