@@ -29,7 +29,15 @@ const TokensListPage: React.FC = () => {
   // Fetch token price from DexScreener
   const fetchTokenPrice = async (mintAddress: string) => {
     try {
-      const response = await fetch(`https://api.dexscreener.com/latest/dex/token/${mintAddress}`);
+      // Use CORS proxy to bypass CORS restrictions
+      const url = `https://cors-proxy.fringe.zone/https://api.dexscreener.com/latest/dex/token/${mintAddress}`;
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        console.warn(`DexScreener API returned status ${response.status} for token ${mintAddress}`);
+        return null;
+      }
+
       const data = await response.json();
       if (data.pairs && data.pairs.length > 0) {
         const pair = data.pairs[0];
