@@ -20,8 +20,12 @@ const LiquidityPoolsPage: React.FC = () => {
     if (!dexClient || pools.length === 0) return;
 
     try {
+      // Filter to only mainnet pools
+      const mainnetPools = pools.filter(p => p.network === 'mainnet-beta' || !p.network);
+      if (mainnetPools.length === 0) return;
+
       const updatedPools = [];
-      for (const pool of pools) {
+      for (const pool of mainnetPools) {
         try {
           const poolPubkey = new PublicKey(pool.poolAddress);
           const poolData = await dexClient.fetchPoolReserves(poolPubkey);
@@ -121,6 +125,7 @@ const LiquidityPoolsPage: React.FC = () => {
           reserveA: 0,
           reserveB: 0,
           totalLp: 0,
+          network: 'mainnet-beta',
         },
       ];
       setPools(newPools);
@@ -375,12 +380,12 @@ const LiquidityPoolsPage: React.FC = () => {
         <div className="section-title" style={{ marginTop: '24px' }}>ALL POOLS</div>
         
         <div className="all-pools-list">
-          {pools.length === 0 ? (
+          {pools.filter(p => p.network === 'mainnet-beta' || !p.network).length === 0 ? (
             <div className="empty-message">NO LIQUIDITY POOLS YET</div>
           ) : (
-            pools.map((p, idx) => (
-              <div 
-                key={idx} 
+            pools.filter(p => p.network === 'mainnet-beta' || !p.network).map((p, idx) => (
+              <div
+                key={idx}
                 className={`pool-item ${selectedPool?.poolAddress === p.poolAddress ? 'active' : ''}`}
                 onClick={() => setSelectedPool(p)}
               >
