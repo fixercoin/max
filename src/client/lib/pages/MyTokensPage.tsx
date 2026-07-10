@@ -23,6 +23,9 @@ const MyTokensPage: React.FC = () => {
   const getFilteredTokens = () => {
     let filtered = [...deployedTokens];
 
+    // Filter to show only mainnet tokens
+    filtered = filtered.filter(t => t.network === 'mainnet-beta' || !t.network);
+
     if (selectedFilterStatus === 'verified') {
       filtered = filtered.filter(t => t.isVerified);
     } else if (selectedFilterStatus === 'unverified') {
