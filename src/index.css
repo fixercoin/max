@@ -713,6 +713,16 @@ tr:hover {
   select {
     font-size: 16px;
   }
+
+  /* Hide mobile bottom nav on larger screens */
+  .mobile-bottom-nav {
+    display: none;
+  }
+}
+
+/* Mobile Bottom Navigation */
+.mobile-bottom-nav {
+  display: none;
 }
 
 @media (max-width: 480px) {
