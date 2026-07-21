@@ -7,7 +7,8 @@ declare global {
     fixorium?: any;
     solana?: any;
     phantom?: any;
-    walletWindow?: Window | null; // ← Add this
+    walletWindow?: Window | null;
+    walletPopupClosed?: boolean;
   }
 }
 
@@ -27,6 +28,8 @@ class FixoriumWalletConnector {
   private publicKey: string | null = null;
   private isConnected: boolean = false;
   private pendingRequests: Map<string, { resolve: Function; reject: Function }> = new Map();
+  private popupWindow: Window | null = null;
+  private popupCheckInterval: NodeJS.Timeout | null = null;
 
   constructor() {
     this.setupMessageListener();
@@ -49,6 +52,9 @@ class FixoriumWalletConnector {
             this.isConnected = true;
             pending.resolve({ publicKey: this.publicKey });
             this.pendingRequests.delete(data.requestId);
+            
+            // Close popup after successful connection
+            this.closePopup();
           }
         }
 
@@ -58,6 +64,7 @@ class FixoriumWalletConnector {
           if (pending) {
             pending.reject(new Error('Connection rejected by user'));
             this.pendingRequests.delete(data.requestId);
+            this.closePopup();
           }
         }
 
@@ -67,6 +74,7 @@ class FixoriumWalletConnector {
           if (pending) {
             pending.resolve({ signature: data.payload?.signature });
             this.pendingRequests.delete(data.requestId);
+            this.closePopup();
           }
         }
 
@@ -76,12 +84,36 @@ class FixoriumWalletConnector {
           if (pending) {
             pending.reject(new Error('Transaction rejected by user'));
             this.pendingRequests.delete(data.requestId);
+            this.closePopup();
           }
+        }
+
+        // Handle wallet ready (popup loaded)
+        if (data.type === 'WALLET_READY') {
+          console.log('✅ Wallet popup ready');
         }
       } catch (error) {
         console.error('Error processing wallet message:', error);
       }
     });
+
+    // Listen for popup close events
+    window.addEventListener('beforeunload', () => {
+      this.closePopup();
+    });
+  }
+
+  private closePopup() {
+    if (this.popupWindow && !this.popupWindow.closed) {
+      console.log('🔒 Closing wallet popup...');
+      this.popupWindow.close();
+      this.popupWindow = null;
+    }
+    
+    if (this.popupCheckInterval) {
+      clearInterval(this.popupCheckInterval);
+      this.popupCheckInterval = null;
+    }
   }
 
   // ============================================================
@@ -111,12 +143,13 @@ class FixoriumWalletConnector {
       console.log('   • Web URL:', webUrl);
 
       // Open wallet
-      this.openWallet(webUrl, deepLink);
+      this.openWallet(webUrl, deepLink, requestId);
 
       // Timeout after 60 seconds
       setTimeout(() => {
         if (this.pendingRequests.has(requestId)) {
           this.pendingRequests.delete(requestId);
+          this.closePopup();
           reject(new Error('Connection timeout - wallet did not respond'));
         }
       }, 60000);
@@ -156,11 +189,12 @@ class FixoriumWalletConnector {
       console.log('✍️ Opening Fixorium Wallet for transaction signing...');
       console.log('   • Request ID:', requestId);
 
-      this.openWallet(webUrl, deepLink);
+      this.openWallet(webUrl, deepLink, requestId);
 
       setTimeout(() => {
         if (this.pendingRequests.has(requestId)) {
           this.pendingRequests.delete(requestId);
+          this.closePopup();
           reject(new Error('Transaction signing timeout'));
         }
       }, 60000);
@@ -194,11 +228,12 @@ class FixoriumWalletConnector {
       console.log('✍️ Opening Fixorium Wallet for message signing...');
       console.log('   • Request ID:', requestId);
 
-      this.openWallet(webUrl, deepLink);
+      this.openWallet(webUrl, deepLink, requestId);
 
       setTimeout(() => {
         if (this.pendingRequests.has(requestId)) {
           this.pendingRequests.delete(requestId);
+          this.closePopup();
           reject(new Error('Message signing timeout'));
         }
       }, 60000);
@@ -209,7 +244,7 @@ class FixoriumWalletConnector {
   // OPEN WALLET
   // ============================================================
 
-  private openWallet(webUrl: string, deepLink: string) {
+  private openWallet(webUrl: string, deepLink: string, requestId: string) {
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     const isAndroid = /Android/i.test(navigator.userAgent);
     const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -218,8 +253,8 @@ class FixoriumWalletConnector {
       console.log('📱 Opening wallet on mobile...');
 
       // Store request ID for callback handling
-      const params = new URLSearchParams(new URL(webUrl).search);
-      localStorage.setItem('pending_wallet_request', params.get('requestId') || '');
+      localStorage.setItem('pending_wallet_request', requestId);
+      localStorage.setItem('pending_wallet_action', 'connect');
 
       // Try deep link first
       if (isAndroid) {
@@ -239,19 +274,42 @@ class FixoriumWalletConnector {
     } else {
       // Desktop - open in new window
       console.log('💻 Opening wallet in new window...');
-      const walletWindow = window.open(
+      
+      // Close any existing popup
+      this.closePopup();
+      
+      // Open new popup
+      this.popupWindow = window.open(
         webUrl,
         'FixoriumWallet',
-        'width=420,height=750,menubar=no,toolbar=no,location=no'
+        'width=420,height=750,menubar=no,toolbar=no,location=no,resizable=yes,scrollbars=yes'
       );
 
-      if (!walletWindow) {
+      if (!this.popupWindow) {
         console.warn('⚠️ Popup blocked, redirecting instead...');
         window.location.href = webUrl;
+        return;
       }
 
-      // Store reference for communication - FIXED
-      window.walletWindow = walletWindow;
+      // Store reference
+      window.walletWindow = this.popupWindow;
+
+      // Monitor popup close
+      this.popupCheckInterval = setInterval(() => {
+        if (this.popupWindow && this.popupWindow.closed) {
+          console.log('🔴 Wallet popup closed by user');
+          this.closePopup();
+          
+          // Clean up pending request if still pending
+          if (this.pendingRequests.has(requestId)) {
+            this.pendingRequests.delete(requestId);
+            // Don't reject here - user might have approved and closed
+          }
+        }
+      }, 500);
+
+      // Focus the popup
+      this.popupWindow.focus();
     }
   }
 
@@ -263,6 +321,7 @@ class FixoriumWalletConnector {
     this.publicKey = null;
     this.isConnected = false;
     this.pendingRequests.clear();
+    this.closePopup();
     console.log('🔌 Disconnected from Fixorium Wallet');
   }
 
@@ -301,26 +360,47 @@ const Header: React.FC = () => {
     const signature = params.get('signature');
     const success = params.get('success') === 'true';
     const error = params.get('error');
+    const connected = params.get('connected') === 'true';
+    const publicKey = params.get('publicKey');
 
-    if (requestId && success) {
-      console.log('✅ Wallet callback received:', { requestId, signature });
-      // Handle connection success
-      if (signature) {
-        // This is a connection or signature callback
+    // Handle callback from wallet
+    if (requestId) {
+      console.log('📥 Wallet callback received:', { requestId, success, connected });
+
+      if (success && (signature || connected)) {
+        const walletPublicKey = publicKey || signature?.split('_')[2] || 'F9RJSJ4Fr2mLsQrZjemeg3PVMjG2KgjF9t5shZLHMnwG';
+        
         const walletInfo: WalletInfo = {
-          publicKey: signature.split('_')[2] || 'F9RJSJ4Fr2mLsQrZjemeg3PVMjG2KgjF9t5shZLHMnwG',
+          publicKey: walletPublicKey,
           provider: fixoriumWallet,
           isConnected: true
         };
+        
         setWallet(walletInfo);
-        setWalletStatus(`${walletInfo.publicKey.slice(0, 28)}...`);
-        setFixoriumConnection({ publicKey: walletInfo.publicKey });
+        setWalletStatus(`${walletPublicKey.slice(0, 28)}...`);
+        setFixoriumConnection({ publicKey: walletPublicKey });
+        
+        // Store connection
+        localStorage.setItem('fixorium_connection', JSON.stringify({
+          publicKey: walletPublicKey,
+          connectedAt: Date.now()
+        }));
+        
+        console.log('✅ Connected to Fixorium Wallet:', walletPublicKey);
+        
+        // Close the popup window if it exists
+        if (window.walletWindow && !window.walletWindow.closed) {
+          window.walletWindow.close();
+          window.walletWindow = null;
+        }
+        
+      } else if (!success) {
+        console.log('❌ Wallet callback rejected:', error);
+        setWalletStatus(error || 'Connection rejected');
       }
-      // Clean URL
+
+      // Clean URL params
       window.history.replaceState({}, '', window.location.pathname);
-    } else if (requestId && !success) {
-      console.log('❌ Wallet callback rejected:', error);
-      setWalletStatus('Connection rejected');
     }
 
     // Check if Fixorium wallet is already connected
@@ -472,6 +552,13 @@ const Header: React.FC = () => {
     setWallet(null);
     setWalletStatus('');
     setFixoriumConnection(null);
+    
+    // Close any popup
+    if (window.walletWindow && !window.walletWindow.closed) {
+      window.walletWindow.close();
+      window.walletWindow = null;
+    }
+    
     console.log('🔌 Disconnected');
   };
 
