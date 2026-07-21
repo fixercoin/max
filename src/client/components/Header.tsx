@@ -24,17 +24,14 @@ const Header: React.FC = () => {
   const [showWalletDialog, setShowWalletDialog] = useState(false);
 
 
-  // Get wallet provider by name
   const getProvider = (walletName?: string): any => {
     const name = walletName || selectedWallet;
-    if (name === 'phantom' || name === 'standard') return window.solana;
-    if (name === 'solflare') return window.solana;
-    if (name === 'fixorium') return window.fixorium || window.solana;
+    if (name === 'fixorium') return window.fixorium;
     return window.solana;
   };
 
-  const isWalletInstalled = (): boolean => {
-    return !!window.solana || !!window.fixorium;
+  const isWalletInstalled = (walletName?: string): boolean => {
+    return !!getProvider(walletName);
   };
 
   // Check if wallet is already connected on page load
@@ -79,14 +76,17 @@ const Header: React.FC = () => {
   };
 
   const handleConnectWallet = async (walletName?: string) => {
-    if (!isWalletInstalled()) {
-      setWalletStatus('No Solana wallet detected! Install Phantom or Solflare.');
+    const name = walletName || selectedWallet;
+    const walletDisplayName = name === 'fixorium'
+      ? 'Fixorium'
+      : name.charAt(0).toUpperCase() + name.slice(1);
+
+    if (!isWalletInstalled(name)) {
+      setWalletStatus(`${walletDisplayName} wallet not detected. Install or open ${walletDisplayName} and try again.`);
       return;
     }
 
     setIsConnecting(true);
-    const name = walletName || selectedWallet;
-    const walletDisplayName = name.charAt(0).toUpperCase() + name.slice(1);
     setWalletStatus(`Connecting to ${walletDisplayName}...`);
 
     try {
@@ -149,7 +149,8 @@ const Header: React.FC = () => {
   const walletOptions = [
     { name: 'phantom', label: 'Phantom' },
     { name: 'solflare', label: 'Solflare' },
-    { name: 'standard', label: 'Standard Wallet' }
+    { name: 'standard', label: 'Standard Wallet' },
+    { name: 'fixorium', label: 'Fixorium Wallet' }
   ];
 
   const handleDisconnectWallet = () => {
@@ -287,7 +288,7 @@ const Header: React.FC = () => {
             )}
             {!isWalletInstalled() && !walletStatus && (
               <div className="wallet-status wallet-warning">
-                No Solana wallet detected. Install Phantom or Solflare.
+                No wallet detected. Install Phantom, Solflare, or Fixorium Wallet.
               </div>
             )}
           </>
