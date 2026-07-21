@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
 import type { PageType } from '../../App';
+import { fixoriumWallet } from '../lib/fixoriumWalletConnector';
 
 declare global {
   interface Window {
@@ -31,6 +32,7 @@ const Header: React.FC = () => {
   };
 
   const isWalletInstalled = (walletName?: string): boolean => {
+    if (walletName === 'fixorium') return true;
     return !!getProvider(walletName);
   };
 
@@ -90,13 +92,23 @@ const Header: React.FC = () => {
     setWalletStatus(`Connecting to ${walletDisplayName}...`);
 
     try {
+      if (name === 'fixorium') {
+        const connection = await fixoriumWallet.connect();
+        setWallet({
+          publicKey: connection.publicKey,
+          provider: fixoriumWallet,
+          isConnected: true
+        });
+        setWalletStatus(`${connection.publicKey.slice(0, 28)}...`);
+        return;
+      }
+
       const provider = getProvider(name);
 
       if (!provider) {
         throw new Error(`${walletDisplayName} provider not found`);
       }
 
-      // Connect with timeout
       const result = await Promise.race([
         provider.connect(),
         new Promise((_, reject) =>
@@ -157,6 +169,11 @@ const Header: React.FC = () => {
     setWallet(null);
     setWalletStatus('');
     // Optionally call provider.disconnect() if available
+    if (selectedWallet === 'fixorium') {
+      fixoriumWallet.disconnect();
+      return;
+    }
+
     const provider = getProvider();
     if (provider?.disconnect) {
       provider.disconnect();
