@@ -1,6 +1,7 @@
 interface FixoriumConnectionResponse {
   type: string;
   requestId?: string;
+  extensionId?: string;
   payload?: {
     publicKey?: string;
     address?: string;
@@ -11,6 +12,8 @@ interface FixoriumConnectionResponse {
   address?: string;
   error?: string;
 }
+
+const FIXORIUM_EXTENSION_ID = 'pbimenokoaiofnchllhppnmbghljdjld';
 
 const getPublicKey = (response: FixoriumConnectionResponse): string => {
   return response.payload?.publicKey || response.payload?.address || response.publicKey || response.address || '';
@@ -35,7 +38,7 @@ class FixoriumWalletConnector {
     return new Promise((resolve, reject) => {
       const timeoutId = window.setTimeout(() => {
         cleanup();
-        reject(new Error('Fixorium Wallet did not respond. Open Fixorium Wallet and try again.'));
+        reject(new Error('Fixorium Wallet did not respond. Open the extension and try again.'));
       }, 30000);
 
       const cleanup = () => {
@@ -48,7 +51,8 @@ class FixoriumWalletConnector {
         if (event.source !== window || !event.data) return;
 
         const response = event.data;
-        if (response.requestId && response.requestId !== requestId) return;
+        if (response.requestId !== requestId) return;
+        if (response.extensionId && response.extensionId !== FIXORIUM_EXTENSION_ID) return;
         if (!['WALLET_CONNECTED', 'CONNECTION_RESPONSE', 'CONNECTION_APPROVED', 'CONNECTION_REJECTED'].includes(response.type)) return;
 
         const publicKey = getPublicKey(response);
@@ -68,13 +72,15 @@ class FixoriumWalletConnector {
       window.postMessage({
         type: 'CONNECTION_REQUEST',
         requestId,
+        extensionId: FIXORIUM_EXTENSION_ID,
         payload: {
           appOrigin: window.location.origin,
           appName: 'MAX DEX',
-          platform: 'web'
+          platform: 'web',
+          extensionId: FIXORIUM_EXTENSION_ID
         },
         timestamp: Date.now()
-      }, '*');
+      }, window.location.origin);
     });
   }
 
@@ -84,9 +90,10 @@ class FixoriumWalletConnector {
 
     window.postMessage({
       type: 'WALLET_DISCONNECTED',
-      payload: {},
+      extensionId: FIXORIUM_EXTENSION_ID,
+      payload: { extensionId: FIXORIUM_EXTENSION_ID },
       timestamp: Date.now()
-    }, '*');
+    }, window.location.origin);
   }
 }
 
