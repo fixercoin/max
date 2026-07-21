@@ -38,26 +38,16 @@ class FixoriumWalletConnector {
   }
 
   private setupMessageListener() {
-    // Remove existing listener if any
     if (this.messageHandler) {
       window.removeEventListener('message', this.messageHandler);
     }
 
     this.messageHandler = (event: MessageEvent) => {
-      // Accept messages from Fixorium Wallet or any origin (for testing)
-      console.log('📩 Received message:', {
-        origin: event.origin,
-        data: event.data,
-        source: event.source === this.popupWindow ? 'popup' : 'other'
-      });
-
       try {
         const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
 
-        // Handle connection response
         if (data.type === 'CONNECTION_APPROVED' || data.type === 'WALLET_CONNECTED') {
           console.log('✅ Connection approved!', data);
-          
           const pending = this.pendingRequests.get(data.requestId);
           if (pending) {
             const publicKey = data.payload?.publicKey || data.publicKey;
@@ -65,13 +55,10 @@ class FixoriumWalletConnector {
             this.isConnected = true;
             pending.resolve({ publicKey: this.publicKey });
             this.pendingRequests.delete(data.requestId);
-            
-            // Close popup
             this.closePopup();
           }
         }
 
-        // Handle connection rejection
         if (data.type === 'CONNECTION_REJECTED' || data.type === 'WALLET_REJECTED') {
           console.log('❌ Connection rejected', data);
           const pending = this.pendingRequests.get(data.requestId);
@@ -82,7 +69,6 @@ class FixoriumWalletConnector {
           }
         }
 
-        // Handle transaction signed
         if (data.type === 'TRANSACTION_SIGNED') {
           console.log('✅ Transaction signed', data);
           const pending = this.pendingRequests.get(data.requestId);
@@ -93,7 +79,6 @@ class FixoriumWalletConnector {
           }
         }
 
-        // Handle transaction rejected
         if (data.type === 'TRANSACTION_REJECTED') {
           console.log('❌ Transaction rejected', data);
           const pending = this.pendingRequests.get(data.requestId);
@@ -104,28 +89,9 @@ class FixoriumWalletConnector {
           }
         }
 
-        // Handle wallet ready
         if (data.type === 'WALLET_READY') {
           console.log('✅ Wallet popup ready');
           window.walletPopupReady = true;
-        }
-
-        // Handle callback redirect (from wallet)
-        if (data.type === 'CALLBACK_REDIRECT') {
-          console.log('📤 Callback redirect detected', data);
-          const pending = this.pendingRequests.get(data.requestId);
-          if (pending) {
-            if (data.payload?.success) {
-              const publicKey = data.payload?.publicKey || data.payload?.signature?.split('_')[2];
-              this.publicKey = publicKey;
-              this.isConnected = true;
-              pending.resolve({ publicKey: this.publicKey });
-            } else {
-              pending.reject(new Error(data.payload?.error || 'Request failed'));
-            }
-            this.pendingRequests.delete(data.requestId);
-            this.closePopup();
-          }
         }
       } catch (error) {
         // Not JSON or not a wallet message - ignore
@@ -154,27 +120,20 @@ class FixoriumWalletConnector {
     window.walletPopupReady = false;
   }
 
-  // ============================================================
-  // CONNECT WALLET
-  // ============================================================
-
   async connect(): Promise<{ publicKey: string }> {
     return new Promise((resolve, reject) => {
       const requestId = 'conn_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8);
 
-      // Store promise callbacks
       this.pendingRequests.set(requestId, { resolve, reject });
 
-      // Build deep link URL with callback as postMessage instead of redirect
       const params = new URLSearchParams();
       params.append('requestId', requestId);
       params.append('message', 'Connect to Max Fixorium App');
       params.append('appName', 'Max Fixorium App');
       params.append('appUrl', window.location.origin);
-      params.append('callbackMethod', 'postMessage'); // Tell wallet to use postMessage
+      params.append('callbackMethod', 'postMessage');
       params.append('callbackOrigin', window.location.origin);
 
-      // Use postMessage callback instead of redirect
       const webUrl = `${FIXORIUM_WALLET_URL}/sign?${params.toString()}`;
       const deepLink = `fixorium://sign?${params.toString()}`;
 
@@ -182,10 +141,8 @@ class FixoriumWalletConnector {
       console.log('   • Request ID:', requestId);
       console.log('   • Web URL:', webUrl);
 
-      // Open wallet
       this.openWallet(webUrl, deepLink, requestId);
 
-      // Timeout after 60 seconds
       setTimeout(() => {
         if (this.pendingRequests.has(requestId)) {
           this.pendingRequests.delete(requestId);
@@ -196,10 +153,6 @@ class FixoriumWalletConnector {
     });
   }
 
-  // ============================================================
-  // SIGN TRANSACTION
-  // ============================================================
-
   async signTransaction(transaction: any): Promise<{ signature: string }> {
     if (!this.isConnected || !this.publicKey) {
       throw new Error('Wallet not connected');
@@ -208,7 +161,6 @@ class FixoriumWalletConnector {
     return new Promise((resolve, reject) => {
       const requestId = 'tx_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8);
 
-      // Convert transaction to base64
       const transactionBase64 = typeof transaction === 'string' 
         ? transaction 
         : btoa(JSON.stringify(transaction));
@@ -241,10 +193,6 @@ class FixoriumWalletConnector {
       }, 60000);
     });
   }
-
-  // ============================================================
-  // SIGN MESSAGE
-  // ============================================================
 
   async signMessage(message: string): Promise<{ signature: string }> {
     if (!this.isConnected || !this.publicKey) {
@@ -282,10 +230,6 @@ class FixoriumWalletConnector {
     });
   }
 
-  // ============================================================
-  // OPEN WALLET
-  // ============================================================
-
   private openWallet(webUrl: string, deepLink: string, requestId: string) {
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     const isAndroid = /Android/i.test(navigator.userAgent);
@@ -294,18 +238,15 @@ class FixoriumWalletConnector {
     if (isMobile) {
       console.log('📱 Opening wallet on mobile...');
 
-      // Store request ID for callback handling
       localStorage.setItem('pending_wallet_request', requestId);
       localStorage.setItem('pending_wallet_action', 'connect');
 
-      // Try deep link first
       if (isAndroid) {
         window.location.href = deepLink;
       } else if (isIOS) {
         window.location.href = deepLink;
       }
 
-      // Fallback: if wallet app not installed, open web version
       setTimeout(() => {
         if (!document.hidden) {
           console.log('⚠️ Wallet app not detected, opening web version...');
@@ -314,13 +255,10 @@ class FixoriumWalletConnector {
       }, 2000);
 
     } else {
-      // Desktop - open in new window
       console.log('💻 Opening wallet in new window...');
       
-      // Close any existing popup
       this.closePopup();
       
-      // Open new popup
       this.popupWindow = window.open(
         webUrl,
         'FixoriumWallet',
@@ -333,27 +271,22 @@ class FixoriumWalletConnector {
         return;
       }
 
-      // Store reference
       window.walletWindow = this.popupWindow;
       window.walletPopupOpener = window;
 
-      // Monitor popup close
       this.popupCheckInterval = setInterval(() => {
         if (this.popupWindow && this.popupWindow.closed) {
           console.log('🔴 Wallet popup closed by user');
           this.closePopup();
           
-          // Clean up pending request if still pending
           if (this.pendingRequests.has(requestId)) {
             this.pendingRequests.delete(requestId);
           }
         }
       }, 500);
 
-      // Focus the popup
       this.popupWindow.focus();
 
-      // Send a message to the popup to confirm connection
       setTimeout(() => {
         try {
           if (this.popupWindow && !this.popupWindow.closed) {
@@ -370,10 +303,6 @@ class FixoriumWalletConnector {
     }
   }
 
-  // ============================================================
-  // DISCONNECT
-  // ============================================================
-
   disconnect(): void {
     this.publicKey = null;
     this.isConnected = false;
@@ -381,10 +310,6 @@ class FixoriumWalletConnector {
     this.closePopup();
     console.log('🔌 Disconnected from Fixorium Wallet');
   }
-
-  // ============================================================
-  // GET WALLET INFO
-  // ============================================================
 
   getWalletInfo() {
     return {
@@ -409,10 +334,8 @@ const Header: React.FC = () => {
   const [selectedWallet, setSelectedWallet] = useState<string>('fixorium');
   const [showWalletDialog, setShowWalletDialog] = useState(false);
 
-  // Handle postMessage from wallet
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-      // Accept messages from Fixorium Wallet
       if (event.origin !== FIXORIUM_WALLET_URL) return;
 
       try {
@@ -430,7 +353,6 @@ const Header: React.FC = () => {
             setWallet(walletInfo);
             setWalletStatus(`${publicKey.slice(0, 28)}...`);
             
-            // Store connection
             localStorage.setItem('fixorium_connection', JSON.stringify({
               publicKey: publicKey,
               connectedAt: Date.now()
@@ -438,7 +360,6 @@ const Header: React.FC = () => {
             
             console.log('✅ Connected to Fixorium Wallet:', publicKey);
             
-            // Close popup
             if (window.walletWindow && !window.walletWindow.closed) {
               window.walletWindow.close();
               window.walletWindow = null;
@@ -487,17 +408,14 @@ const Header: React.FC = () => {
       
       console.log('✅ Connected via URL callback:', walletPublicKey);
       
-      // Clean URL
       window.history.replaceState({}, '', window.location.pathname);
       
-      // Close popup if open
       if (window.walletWindow && !window.walletWindow.closed) {
         window.walletWindow.close();
         window.walletWindow = null;
       }
     }
 
-    // Check stored connection
     const stored = localStorage.getItem('fixorium_connection');
     if (stored) {
       try {
@@ -564,7 +482,6 @@ const Header: React.FC = () => {
         return;
       }
 
-      // Other wallets
       const provider = getProvider(name);
       if (!provider) {
         throw new Error(`${walletDisplayName} wallet not installed`);
@@ -632,7 +549,7 @@ const Header: React.FC = () => {
     setWallet(null);
     setWalletStatus('');
     
-    if (window.walletWindow && !window.walletWindow.cled) {
+    if (window.walletWindow && !window.walletWindow.closed) {
       window.walletWindow.close();
       window.walletWindow = null;
     }
