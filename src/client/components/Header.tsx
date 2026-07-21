@@ -7,6 +7,7 @@ declare global {
     fixorium?: any;
     solana?: any;
     phantom?: any;
+    walletWindow?: Window | null; // ← Add this
   }
 }
 
@@ -249,7 +250,7 @@ class FixoriumWalletConnector {
         window.location.href = webUrl;
       }
 
-      // Store reference for communication
+      // Store reference for communication - FIXED
       window.walletWindow = walletWindow;
     }
   }
