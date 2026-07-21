@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
 import type { PageType } from '../../App';
+import { fixoriumWallet } from '../lib/fixoriumWalletConnector';
 
 declare global {
   interface Window {
@@ -24,17 +25,15 @@ const Header: React.FC = () => {
   const [showWalletDialog, setShowWalletDialog] = useState(false);
 
 
-  // Get wallet provider by name
   const getProvider = (walletName?: string): any => {
     const name = walletName || selectedWallet;
-    if (name === 'phantom' || name === 'standard') return window.solana;
-    if (name === 'solflare') return window.solana;
-    if (name === 'fixorium') return window.fixorium || window.solana;
+    if (name === 'fixorium') return window.fixorium;
     return window.solana;
   };
 
-  const isWalletInstalled = (): boolean => {
-    return !!window.solana || !!window.fixorium;
+  const isWalletInstalled = (walletName?: string): boolean => {
+    if (walletName === 'fixorium') return true;
+    return !!getProvider(walletName);
   };
 
   // Check if wallet is already connected on page load
@@ -79,24 +78,37 @@ const Header: React.FC = () => {
   };
 
   const handleConnectWallet = async (walletName?: string) => {
-    if (!isWalletInstalled()) {
-      setWalletStatus('No Solana wallet detected! Install Phantom or Solflare.');
+    const name = walletName || selectedWallet;
+    const walletDisplayName = name === 'fixorium'
+      ? 'Fixorium'
+      : name.charAt(0).toUpperCase() + name.slice(1);
+
+    if (!isWalletInstalled(name)) {
+      setWalletStatus(`${walletDisplayName} wallet not detected. Install or open ${walletDisplayName} and try again.`);
       return;
     }
 
     setIsConnecting(true);
-    const name = walletName || selectedWallet;
-    const walletDisplayName = name.charAt(0).toUpperCase() + name.slice(1);
     setWalletStatus(`Connecting to ${walletDisplayName}...`);
 
     try {
+      if (name === 'fixorium') {
+        const connection = await fixoriumWallet.connect();
+        setWallet({
+          publicKey: connection.publicKey,
+          provider: fixoriumWallet,
+          isConnected: true
+        });
+        setWalletStatus(`${connection.publicKey.slice(0, 28)}...`);
+        return;
+      }
+
       const provider = getProvider(name);
 
       if (!provider) {
         throw new Error(`${walletDisplayName} provider not found`);
       }
 
-      // Connect with timeout
       const result = await Promise.race([
         provider.connect(),
         new Promise((_, reject) =>
@@ -149,13 +161,19 @@ const Header: React.FC = () => {
   const walletOptions = [
     { name: 'phantom', label: 'Phantom' },
     { name: 'solflare', label: 'Solflare' },
-    { name: 'standard', label: 'Standard Wallet' }
+    { name: 'standard', label: 'Standard Wallet' },
+    { name: 'fixorium', label: 'Fixorium Wallet' }
   ];
 
   const handleDisconnectWallet = () => {
     setWallet(null);
     setWalletStatus('');
     // Optionally call provider.disconnect() if available
+    if (selectedWallet === 'fixorium') {
+      fixoriumWallet.disconnect();
+      return;
+    }
+
     const provider = getProvider();
     if (provider?.disconnect) {
       provider.disconnect();
@@ -287,7 +305,7 @@ const Header: React.FC = () => {
             )}
             {!isWalletInstalled() && !walletStatus && (
               <div className="wallet-status wallet-warning">
-                No Solana wallet detected. Install Phantom or Solflare.
+                No wallet detected. Install Phantom, Solflare, or Fixorium Wallet.
               </div>
             )}
           </>
