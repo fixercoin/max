@@ -40,7 +40,6 @@ class FixoriumWalletConnector {
     }
 
     this.messageHandler = (event: MessageEvent) => {
-      // Accept messages from Fixorium Wallet OR our own origin
       if (event.origin !== FIXORIUM_WALLET_URL && event.origin !== window.location.origin) {
         return;
       }
@@ -132,7 +131,6 @@ class FixoriumWalletConnector {
       console.log('   • Request ID:', requestId);
       console.log('   • Web URL:', webUrl);
 
-      // Open popup
       this.popupWindow = window.open(
         webUrl,
         'FixoriumWallet',
@@ -149,7 +147,6 @@ class FixoriumWalletConnector {
       window.walletWindow = this.popupWindow;
       this.popupWindow.focus();
 
-      // Monitor popup close
       const checkInterval = setInterval(() => {
         if (this.popupWindow && this.popupWindow.closed) {
           console.log('🔴 Wallet popup closed by user');
@@ -163,7 +160,6 @@ class FixoriumWalletConnector {
         }
       }, 500);
 
-      // Timeout after 60 seconds
       setTimeout(() => {
         clearInterval(checkInterval);
         if (this.pendingRequests.has(requestId)) {
@@ -323,11 +319,9 @@ const Header: React.FC = () => {
       }
     }
 
-    // Listen for messages from wallet popup - FIXED ORIGIN CHECK
+    // Listen for messages from wallet popup
     const handleMessage = (event: MessageEvent) => {
-      // Accept messages from Fixorium Wallet OR our own origin
       if (event.origin !== FIXORIUM_WALLET_URL && event.origin !== window.location.origin) {
-        console.log('📩 Ignored message from origin:', event.origin);
         return;
       }
       
@@ -597,9 +591,7 @@ const Header: React.FC = () => {
                   DISCONNECT
                 </button>
               </div>
-              <div className="wallet-status wallet-connected">
-                ✓ Wallet Connected
-              </div>
+              {/* ✓ Wallet Connected - REMOVED */}
             </>
           ) : (
             <>
