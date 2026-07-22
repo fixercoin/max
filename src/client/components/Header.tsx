@@ -40,12 +40,14 @@ class FixoriumWalletConnector {
     }
 
     this.messageHandler = (event: MessageEvent) => {
-      // Only accept messages from our own origin (from the popup)
-      if (event.origin !== window.location.origin) return;
+      // Accept messages from Fixorium Wallet OR our own origin
+      if (event.origin !== FIXORIUM_WALLET_URL && event.origin !== window.location.origin) {
+        return;
+      }
 
       try {
         const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
-        console.log('📩 Message from popup:', data);
+        console.log('📩 Message from wallet:', data);
 
         if (data.type === 'CONNECTION_APPROVED' || data.type === 'WALLET_CONNECTED') {
           const pending = this.pendingRequests.get(data.requestId);
@@ -321,15 +323,22 @@ const Header: React.FC = () => {
       }
     }
 
-    // Listen for messages from popup callback
+    // Listen for messages from wallet popup - FIXED ORIGIN CHECK
     const handleMessage = (event: MessageEvent) => {
-      if (event.origin !== window.location.origin) return;
+      // Accept messages from Fixorium Wallet OR our own origin
+      if (event.origin !== FIXORIUM_WALLET_URL && event.origin !== window.location.origin) {
+        console.log('📩 Ignored message from origin:', event.origin);
+        return;
+      }
       
       try {
         const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+        console.log('📩 Wallet message received in Header:', data);
         
-        if (data.type === 'CONNECTION_APPROVED') {
-          const publicKey = data.payload?.publicKey;
+        if (data.type === 'CONNECTION_APPROVED' || data.type === 'WALLET_CONNECTED') {
+          const publicKey = data.payload?.publicKey || data.publicKey;
+          console.log('✅ Connection approved! Public Key:', publicKey);
+          
           if (publicKey) {
             const walletInfo: WalletInfo = {
               publicKey: publicKey,
@@ -350,15 +359,46 @@ const Header: React.FC = () => {
         }
         
         if (data.type === 'CONNECTION_REJECTED') {
+          console.log('❌ Connection rejected');
           setWalletStatus('Connection rejected');
           setIsConnecting(false);
         }
       } catch (e) {
-        // Ignore
+        // Not JSON - ignore
       }
     };
 
     window.addEventListener('message', handleMessage);
+    
+    // Also check for URL callback params (fallback)
+    const params = new URLSearchParams(window.location.search);
+    const requestId = params.get('requestId');
+    const signature = params.get('signature');
+    const success = params.get('success') === 'true';
+    const connected = params.get('connected') === 'true';
+    const publicKey = params.get('publicKey');
+    
+    if (requestId && (success || connected) && publicKey) {
+      console.log('📥 URL callback detected!', { requestId, publicKey });
+      localStorage.setItem('fixorium_connection', JSON.stringify({
+        publicKey: publicKey,
+        signature: signature,
+        connectedAt: Date.now()
+      }));
+      
+      const walletInfo: WalletInfo = {
+        publicKey: publicKey,
+        provider: fixoriumWallet,
+        isConnected: true
+      };
+      setWallet(walletInfo);
+      setWalletStatus(`${publicKey.slice(0, 28)}...`);
+      setIsConnecting(false);
+      
+      // Clean URL
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+    
     return () => window.removeEventListener('message', handleMessage);
   }, [setWallet]);
 
